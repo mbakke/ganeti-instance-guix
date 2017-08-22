@@ -1,0 +1,19 @@
+ganeti-instance-guix
+====================
+
+This is a Ganeti OS definition that creates GuixSD instances.
+
+Usage:
+
+$ gnt-instance add -o guix -O config="$(base64 /path/to/config.scm)" [...]
+
+Installation:
+
+$ ./bootstrap (if running from git)
+$ ./configure --with-os-dir=/srv/ganeti/os
+$ make && make install
+
+Bugs:
+
+* No support for arbitrary git commits.
+* Runs with elevated privileges on the host.

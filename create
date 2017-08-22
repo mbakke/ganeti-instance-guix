@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Copyright (C) 2017 Marius Bakke
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+
+. common.sh
+
+CONFIG_FILE=`mktemp` || exit 1
+trap "rm -f $CONFIG_FILE" EXIT
+
+# The 'gnt-instance' tool does not like being passed text that can
+# be mistaken for commands, so gibberize it through base64.
+# TODO: Support plain text for API users.
+echo "${OSP_CONFIG}" | base64 -di > $CONFIG_FILE
+
+DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
+DISK_IMAGE=$($GUIX system vm-image --image-size=$DEVICE_SIZE $CONFIG_FILE)
+
+$QEMU_IMG dd bs=4M -O raw if=$DISK_IMAGE of=$TARGET_DEVICE
+
+exit 0

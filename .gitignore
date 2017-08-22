@@ -1,0 +1,12 @@
+*~
+*.log
+/aclocal.m4
+/autom4te.cache
+/build-aux/install-sh
+/build-aux/missing
+/common.sh
+/config.status
+/configure
+/INSTALL
+Makefile
+Makefile.in
