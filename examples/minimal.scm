@@ -3,9 +3,15 @@
 (use-package-modules disk nvi)
 
 (define vm-image-motd (plain-file "motd" "
-This is the GNU system.  Welcome!
+Welcome to GuixSD on Ganeti!
 
-To log in as root, simply press enter at the console.\n"))
+This configuration file is available at /etc/current-config.scm.  You
+probably want to make a copy of this file, tweak it to your needs, and
+run `guix system reconfigure my-config.scm`.
+
+Remember to `guix pull` first to fetch the latest package definitions.
+
+Have fun!\n"))
 
 (operating-system
   (host-name "gnu")
@@ -33,6 +39,12 @@ To log in as root, simply press enter at the console.\n"))
                    %base-packages))
 
   (services (cons*
+	     (simple-service 'store-current-config
+			     etc-service-type
+			     `(("current-config.scm"
+				,(local-file (assoc-ref
+					      (current-source-location)
+					      'filename)))))
 	     (dhcp-client-service)
 	     (service openssh-service-type
 		      (openssh-configuration
