@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 log_error() {
-  echo "$@" >&2
+    echo "$@" >&2
 }
 
 BLOCKDEV=@BLOCKDEV@
