@@ -20,7 +20,7 @@ Have fun!\n"))
 
   ;; Assuming /dev/sdX is the target hard disk, and "my-root" is
   ;; the label of the target root file system.
-  (bootloader (grub-configuration (device "/dev/sda")
+  (bootloader (grub-configuration (target "/dev/sda")
                                   (terminal-outputs '(console))))
   (file-systems (cons (file-system
                         (device "my-root")
