@@ -38,5 +38,10 @@
 		    (url guix-repo-uri)
 		    (commit version)))
 	      (file-name (string-append "guix-checkout-" version))
-	      (sha256 (base32 guix-source-checksum))))))
+	      (sha256 (base32 guix-source-checksum))))
+    (arguments
+     ;; Don't require that the full test suite is passing.
+     `(#:tests? #f
+       ,@(package-arguments guix)))))
+
 fixed-guix
