@@ -32,20 +32,25 @@ DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
 
 test -n "${OSP_COMMIT}" && GIT_COMMIT="${OSP_COMMIT}" || GIT_COMMIT=master
 
-# TODO: Drop privileges.
-$GIT clone --branch $GIT_COMMIT $GIT_CLONE_ARGUMENTS $GUIX_REPOSITORY_URI $GIT_CHECKOUT
+# Using a container avoids having to set up GIT_SSL_CAINFO manually.
+$GUIX environment -C -N --share=$GIT_CHECKOUT=$GIT_CHECKOUT \
+    --ad-hoc git le-certs --  git clone --branch $GIT_COMMIT \
+    $GIT_CLONE_ARGUMENTS $GUIX_REPO_URI $GIT_CHECKOUT
 
-# Build the checked-out Guix in a container.
-(cd $GIT_CHECKOUT && $GUIX environment -C guix -- ./bootstrap)
-(cd $GIT_CHECKOUT && $GUIX environment -C guix -- ./configure)
-(cd $GIT_CHECKOUT && $GUIX environment -C guix -- make -j4)
+# TODO: Verify commit.
+export GUIX_COMMIT=$($GIT -C $GIT_CHECKOUT rev-parse HEAD)
+export GUIX_SOURCE_CHECKSUM=$($GUIX hash -rx $GIT_CHECKOUT)
 
-DISK_IMAGE=$(cd $GIT_CHECKOUT && guix environment -C \
+# Build a fixed-output derivation of Guix using $GUIX_COMMIT.
+export NEW_GUIX=$($GUIX build -f build.scm)
+
+# Evaluate and build the user-supplied config.scm in a container.
+DISK_IMAGE=$(cd $GIT_CHECKOUT && $GUIX environment -C \
     --expose=$CONFIG_FILE=/config.scm \
     --expose=/var/guix=/var/guix \
     --expose=/gnu/store=/gnu/store \
-    -- ./pre-inst-env \
-    guix system vm-image --image-size=$DEVICE_SIZE /config.scm)
+    -- $NEW_GUIX system vm-image \
+    --image-size=$DEVICE_SIZE /config.scm)
 
 $QEMU_IMG dd bs=4M -O raw if=$DISK_IMAGE of=$TARGET_DEVICE
 

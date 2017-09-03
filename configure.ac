@@ -58,10 +58,11 @@ then
 fi
 
 # Allow these to be set at configure time.
-AC_ARG_VAR(GUIX_REPOSITORY_URI, Guix repository to clone)
-AC_SUBST(GUIX_REPOSITORY_URI, https://git.savannah.gnu.org/git/guix.git)
+AC_SUBST(GUIX_REPO_URI, https://git.savannah.gnu.org/git/guix.git)
+AC_ARG_VAR(GUIX_REPO_URI, Guix repository to clone)
 
-AC_ARG_VAR(GIT_CLONE_ARGUMENTS, Any arguments passed to `git clone`)
+AC_SUBST(GIT_CLONE_ARGUMENTS, "--depth 1")
+AC_ARG_VAR(GIT_CLONE_ARGUMENTS, Any arguments passed to `git clone`.)
 
 AC_CONFIG_FILES([ Makefile ])
 
