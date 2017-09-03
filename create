@@ -21,7 +21,8 @@ set -e
 
 CONFIG_FILE=`mktemp` || exit 1
 GIT_CHECKOUT=`mktemp -d` || exit 1
-trap "rm -f $CONFIG_FILE ; rm -rf $GIT_CHECKOUT" EXIT INT TERM
+EMPTY=`mktemp -d` || exit 1
+trap "rm -f $CONFIG_FILE ; rm -rf $GIT_CHECKOUT; rm -r $EMPTY" EXIT INT TERM
 
 # Make sure we use root's latest Guix package definitions.
 export HOME=/root
@@ -50,11 +51,13 @@ $GUIX environment -C -N --share=$GIT_CHECKOUT=$GIT_CHECKOUT \
 # TODO: Verify commit.
 $GIT -C $GIT_CHECKOUT reset --hard "${GIT_COMMIT}"
 export GUIX_COMMIT=$($GIT -C $GIT_CHECKOUT rev-parse HEAD)
+echo -n "Hashing repository on version ${GUIX_COMMIT}... "
 export GUIX_SOURCE_CHECKSUM=$($GUIX hash -rx $GIT_CHECKOUT)
+echo "${GUIX_SOURCE_CHECKSUM}."
 
 # Build a fixed-output derivation of Guix using $GUIX_COMMIT and use
 # it to build a VM image based on the user-supplied config.scm.
-DISK_IMAGE=$(cd $GIT_CHECKOUT && $GUIX environment -C \
+DISK_IMAGE=$(cd $EMPTY && $GUIX environment -C \
     --ad-hoc -l $GUIX_BUILD \
     --expose=$CONFIG_FILE=/config.scm \
     --expose=/var/guix=/var/guix \
