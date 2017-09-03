@@ -5,15 +5,23 @@ This is a Ganeti OS definition that creates GuixSD instances.
 
 Usage:
 
-$ gnt-instance add -o guix -O config="$(base64 /path/to/config.scm)" [...]
+$ gnt-instance add -o guix -O \
+  "config=$(base64 /path/to/config.scm),branch=staging" [...]
 
 Installation:
 
-$ ./bootstrap (if running from git)
-$ ./configure --with-os-dir=/srv/ganeti/os
+$ ./configure --with-os-dir=/srv/ganeti/os [...]
 $ make && make install
 
-Bugs:
+Dependencies:
 
-* No support for arbitrary git commits.
+* Working Guix installation.
+* User namespaces enabled in kernel.
+* util-linux
+* qemu-img
+
+Limitations:
+
+* "disk_type" must be 'ide' or similar so /dev/sda is present.
 * Runs with elevated privileges on the host.
+** ...but drops to unprivileged Guix container.
