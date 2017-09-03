@@ -17,7 +17,7 @@
 
 set -e
 
-case $OSP_CONFIG in
+case "${OSP_CONFIG}" in
     "")
 	echo "Configuration file is required."
 	exit 1
