@@ -19,7 +19,10 @@ EXTRA_DIST = \
 do_subst = sed \
 	-e 's,[@]BASE64[@],$(BASE64),g' \
 	-e 's,[@]BLOCKDEV[@],$(BLOCKDEV),g' \
+	-e 's,[@]GIT[@],$(GIT),g' \
+	-e 's,[@]GIT_CLONE_ARGUMENTS[@],$(GIT_CLONE_ARGUMENTS),g' \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
+	-e 's,[@]GUIX_REPOSITORY_URI[@],$(GUIX_REPOSITORY_URI),g' \
 	-e 's,[@]QEMU_IMG[@],$(QEMU_IMG),g'
 
 common.sh: common.sh.in Makefile

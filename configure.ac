@@ -36,6 +36,13 @@ then
   AC_MSG_ERROR([blockdev not found, please install util-linux])
 fi
 
+AC_ARG_VAR(GIT, [git path])
+AC_PATH_PROG(GIT, [git], [], [$ROOT_PATH])
+if test -z "$GIT"
+then
+  AC_MSG_ERROR([git command not found])
+fi
+
 AC_ARG_VAR(GUIX, [guix path])
 AC_PATH_PROG(GUIX, [guix], [], [$ROOT_PATH])
 if test -z "$GUIX"
@@ -49,6 +56,12 @@ if test -z "$QEMU_IMG"
 then
   AC_MSG_ERROR([qemu-img command not found])
 fi
+
+# Allow these to be set at configure time.
+AC_ARG_VAR(GUIX_REPOSITORY_URI, Guix repository to clone)
+AC_SUBST(GUIX_REPOSITORY_URI, https://git.savannah.gnu.org/git/guix.git)
+
+AC_ARG_VAR(GIT_CLONE_ARGUMENTS, Any arguments passed to `git clone`)
 
 AC_CONFIG_FILES([ Makefile ])
 

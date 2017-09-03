@@ -1,1 +1,2 @@
 config A base64-encoded Guix OS declaration.
+commit The git revision to build.

@@ -20,7 +20,8 @@ set -e
 . common.sh
 
 CONFIG_FILE=`mktemp` || exit 1
-trap "rm -f $CONFIG_FILE" EXIT
+GIT_CHECKOUT=`mktemp -d` || exit 1
+trap "rm -f $CONFIG_FILE ; rm -rf $GIT_CHECKOUT" EXIT INT TERM
 
 # The 'gnt-instance' tool does not like being passed text that can
 # be mistaken for commands, so gibberize it through base64.
@@ -28,7 +29,23 @@ trap "rm -f $CONFIG_FILE" EXIT
 echo "${OSP_CONFIG}" | $BASE64 -di > $CONFIG_FILE
 
 DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
-DISK_IMAGE=$($GUIX system vm-image --image-size=$DEVICE_SIZE $CONFIG_FILE)
+
+test -n "${OSP_COMMIT}" && GIT_COMMIT="${OSP_COMMIT}" || GIT_COMMIT=master
+
+# TODO: Drop privileges.
+$GIT clone --branch $GIT_COMMIT $GIT_CLONE_ARGUMENTS $GUIX_REPOSITORY_URI $GIT_CHECKOUT
+
+# Build the checked-out Guix in a container.
+(cd $GIT_CHECKOUT && $GUIX environment -C guix -- ./bootstrap)
+(cd $GIT_CHECKOUT && $GUIX environment -C guix -- ./configure)
+(cd $GIT_CHECKOUT && $GUIX environment -C guix -- make -j4)
+
+DISK_IMAGE=$(cd $GIT_CHECKOUT && guix environment -C \
+    --expose=$CONFIG_FILE=/config.scm \
+    --expose=/var/guix=/var/guix \
+    --expose=/gnu/store=/gnu/store \
+    -- ./pre-inst-env \
+    guix system vm-image --image-size=$DEVICE_SIZE /config.scm)
 
 $QEMU_IMG dd bs=4M -O raw if=$DISK_IMAGE of=$TARGET_DEVICE
 

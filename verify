@@ -26,5 +26,20 @@ case "${OSP_CONFIG}" in
 	;;
 esac
 
+case "${OSP_COMMIT}" in
+    "")
+	;;
+    *[\\\;\(\)$\&]*)
+	echo "Nice try."
+	exit 1
+	;;
+    *[^a-z0-9-]*)
+	echo "Commit can only contain alphanumeric characters and '-'."
+	exit 1
+	;;
+    *)
+	;;
+esac
+
 exit 0
 
