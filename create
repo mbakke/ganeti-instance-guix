@@ -23,6 +23,11 @@ CONFIG_FILE=`mktemp` || exit 1
 GIT_CHECKOUT=`mktemp -d` || exit 1
 trap "rm -f $CONFIG_FILE ; rm -rf $GIT_CHECKOUT" EXIT INT TERM
 
+# Make sure we use root's latest Guix package definitions.
+export HOME=/root
+# Say 'cheeese'.
+$GUIX --version
+
 # The 'gnt-instance' tool does not like being passed text that can
 # be mistaken for commands, so gibberize it through base64.
 # TODO: Support plain text for API users.
