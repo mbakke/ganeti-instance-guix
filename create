@@ -25,7 +25,7 @@ trap "rm -f $CONFIG_FILE" EXIT
 # The 'gnt-instance' tool does not like being passed text that can
 # be mistaken for commands, so gibberize it through base64.
 # TODO: Support plain text for API users.
-echo "${OSP_CONFIG}" | base64 -di > $CONFIG_FILE
+echo "${OSP_CONFIG}" | $BASE64 -di > $CONFIG_FILE
 
 DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
 DISK_IMAGE=$($GUIX system vm-image --image-size=$DEVICE_SIZE $CONFIG_FILE)

@@ -17,6 +17,7 @@ EXTRA_DIST = \
 	common.sh.in
 
 do_subst = sed \
+	-e 's,[@]BASE64[@],$(BASE64),g' \
 	-e 's,[@]BLOCKDEV[@],$(BLOCKDEV),g' \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
 	-e 's,[@]QEMU_IMG[@],$(QEMU_IMG),g'

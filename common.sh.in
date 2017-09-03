@@ -19,6 +19,7 @@ log_error() {
     echo "$@" >&2
 }
 
+BASE64=@BASE64@
 BLOCKDEV=@BLOCKDEV@
 GUIX=@GUIX@
 QEMU_IMG=@QEMU_IMG@

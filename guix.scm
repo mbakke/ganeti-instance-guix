@@ -19,6 +19,7 @@
              (guix licenses)
              (guix packages)
              (gnu packages autotools)
+             (gnu packages base)
              (gnu packages linux)
              (gnu packages package-management)
              (gnu packages virtualization))
@@ -42,7 +43,8 @@
     `(("autoconf" ,autoconf)
       ("automake" ,automake)))
    (inputs
-    `(("guix" ,guix)
+    `(("coreutils" ,coreutils)
+      ("guix" ,guix)
       ("util-linux" ,util-linux)
       ("qemu" ,qemu)))
    (home-page "https://github.com/mbakke/ganeti-instance-guix")
