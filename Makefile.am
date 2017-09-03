@@ -1,5 +1,6 @@
-osname=$(subst ganeti-instance-,,$(PACKAGE))
+AUTOMAKE_OPTIONS = dist-lzip
 
+osname=$(subst ganeti-instance-,,$(PACKAGE))
 osdir=$(OS_DIR)/$(osname)
 
 dist_os_SCRIPTS = create import export rename verify

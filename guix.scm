@@ -20,6 +20,7 @@
              (guix packages)
              (gnu packages autotools)
              (gnu packages base)
+             (gnu packages compression)
              (gnu packages linux)
              (gnu packages package-management)
              (gnu packages virtualization))
@@ -41,7 +42,8 @@
           (lambda _ (zero? (system* "sh" "bootstrap")))))))
    (native-inputs
     `(("autoconf" ,autoconf)
-      ("automake" ,automake)))
+      ("automake" ,automake)
+      ("lzip" ,lzip)))
    (inputs
     `(("coreutils" ,coreutils)
       ("guix" ,guix)
