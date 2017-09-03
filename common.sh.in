@@ -19,6 +19,9 @@ log_error() {
     echo "$@" >&2
 }
 
+# Make this location known to sub-shells.
+export GUIX_BUILD="$(dirname $0)/build.scm"
+
 BASE64=@BASE64@
 BLOCKDEV=@BLOCKDEV@
 GIT=@GIT@

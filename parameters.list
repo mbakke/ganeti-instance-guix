@@ -1,2 +1,4 @@
 config A base64-encoded Guix OS declaration.
-commit The git revision to build.
+branch Branch to clone.  Defaults to 'master'.
+commit Must be reachable from <branch>.  Defaults to HEAD.
+repo_uri Must be a valid git-reference uri.  Defaults to <https://git.savannah.gnu.org/git/guix.git>.

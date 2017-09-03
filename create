@@ -30,28 +30,34 @@ echo "${OSP_CONFIG}" | $BASE64 -di > $CONFIG_FILE
 
 DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
 
-test -n "${OSP_COMMIT}" && GIT_COMMIT="${OSP_COMMIT}" || GIT_COMMIT=master
+test -n "${OSP_BRANCH}" && GIT_BRANCH="${OSP_BRANCH}" || GIT_BRANCH=master
+test -n "${OSP_COMMIT}" && GIT_COMMIT="${OSP_COMMIT}" || GIT_COMMIT=HEAD
 
 # Using a container avoids having to set up GIT_SSL_CAINFO manually.
+# Fetch objects from root's Guix checkout, if it exists.
+echo "Cloning ${GIT_BRANCH}..."
 $GUIX environment -C -N --share=$GIT_CHECKOUT=$GIT_CHECKOUT \
-    --ad-hoc git le-certs --  git clone --branch $GIT_COMMIT \
-    $GIT_CLONE_ARGUMENTS $GUIX_REPO_URI $GIT_CHECKOUT
+      --expose=/root/.config/guix/latest/=/guix-checkout \
+      --ad-hoc git le-certs -- git clone --branch "${GIT_BRANCH}" \
+      --reference-if-able /guix-checkout $GIT_CLONE_ARGUMENTS \
+      $GUIX_REPO_URI $GIT_CHECKOUT
 
 # TODO: Verify commit.
+$GIT -C $GIT_CHECKOUT reset --hard "${GIT_COMMIT}"
 export GUIX_COMMIT=$($GIT -C $GIT_CHECKOUT rev-parse HEAD)
 export GUIX_SOURCE_CHECKSUM=$($GUIX hash -rx $GIT_CHECKOUT)
 
-# Build a fixed-output derivation of Guix using $GUIX_COMMIT.
-export NEW_GUIX=$($GUIX build -f build.scm)
-
-# Evaluate and build the user-supplied config.scm in a container.
+# Build a fixed-output derivation of Guix using $GUIX_COMMIT and use
+# it to build a VM image based on the user-supplied config.scm.
 DISK_IMAGE=$(cd $GIT_CHECKOUT && $GUIX environment -C \
+    --ad-hoc -l $GUIX_BUILD \
     --expose=$CONFIG_FILE=/config.scm \
     --expose=/var/guix=/var/guix \
     --expose=/gnu/store=/gnu/store \
-    -- $NEW_GUIX system vm-image \
+    -- guix system vm-image \
     --image-size=$DEVICE_SIZE /config.scm)
 
+# Copy the resulting store item onto the Ganeti disk device.
 $QEMU_IMG dd bs=4M -O raw if=$DISK_IMAGE of=$TARGET_DEVICE
 
 exit 0

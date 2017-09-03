@@ -41,5 +41,20 @@ case "${OSP_COMMIT}" in
 	;;
 esac
 
+case "${OSP_BRANCH}" in
+    "")
+	;;
+    *[\\\;\(\)$\&]*)
+	echo "Not funny."
+	exit 1
+	;;
+    *[^a-z0-9-]*)
+	echo "Branch can only contain alphanumeric characters and '-'."
+	exit 1
+	;;
+    *)
+	;;
+esac
+
 exit 0
 
