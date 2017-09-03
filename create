@@ -21,7 +21,7 @@ set -e
 
 CONFIG_FILE=`mktemp` || exit 1
 GIT_CHECKOUT=`mktemp -d` || exit 1
-EMPTY=`mktemp -d` || exit 1
+EMPTY=`mktemp -d --suffix EMPTY` || exit 1
 trap "rm -f $CONFIG_FILE ; rm -rf $GIT_CHECKOUT; rm -r $EMPTY" EXIT INT TERM
 
 # Make sure we use root's latest Guix package definitions.
@@ -39,14 +39,22 @@ DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
 test -n "${OSP_BRANCH}" && GIT_BRANCH="${OSP_BRANCH}" || GIT_BRANCH=master
 test -n "${OSP_COMMIT}" && GIT_COMMIT="${OSP_COMMIT}" || GIT_COMMIT=HEAD
 
+# Fetch objects from root's Guix checkout, if possible.
+echo -n "Checking for Guix cache dir... "
+if [ "$(ls -A ${HOME}/.cache/guix/pull)" ]; then
+    GUIX_CACHE_DIR="$(readlink -f ${HOME}/.cache/guix/pull/* | head -n 1)"
+else
+    GUIX_CACHE_DIR=$EMPTY
+fi
+echo $GUIX_CACHE_DIR
+
 # Using a container avoids having to set up GIT_SSL_CAINFO manually.
-# Fetch objects from root's Guix checkout, if it exists.
 echo "Cloning ${GIT_BRANCH}..."
 $GUIX environment -C -N --share=$GIT_CHECKOUT=$GIT_CHECKOUT \
-      --expose=/root/.config/guix/latest/=/guix-checkout \
+      --expose=$GUIX_CACHE_DIR=/guix-checkout \
       --ad-hoc git le-certs -- git clone --branch "${GIT_BRANCH}" \
-      --reference-if-able /guix-checkout $GIT_CLONE_ARGUMENTS \
-      $GUIX_REPO_URI $GIT_CHECKOUT
+      --reference-if-able /guix-checkout --dissociate \
+      $GIT_CLONE_ARGUMENTS $GUIX_REPO_URI $GIT_CHECKOUT
 
 # TODO: Verify commit.
 $GIT -C $GIT_CHECKOUT reset --hard "${GIT_COMMIT}"
