@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Copyright (C) 2017 Marius Bakke
 #
@@ -17,7 +17,7 @@
 
 set -e
 
-. common.sh
+. ./common.sh
 
 CONFIG_FILE=$(mktemp) || exit 1
 GIT_CHECKOUT=$(mktemp -d) || exit 1
