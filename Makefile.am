@@ -1,4 +1,4 @@
-AUTOMAKE_OPTIONS = dist-lzip
+AUTOMAKE_OPTIONS = no-dist-gzip dist-lzip
 
 osname=$(subst ganeti-instance-,,$(PACKAGE))
 osdir=$(OS_DIR)/$(osname)
