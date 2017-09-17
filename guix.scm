@@ -23,6 +23,7 @@
              (gnu packages compression)
              (gnu packages linux)
              (gnu packages package-management)
+             (gnu packages version-control)
              (gnu packages virtualization))
 
 (define %source-dir (dirname (current-filename)))
@@ -46,6 +47,7 @@
       ("lzip" ,lzip)))
    (inputs
     `(("coreutils" ,coreutils)
+      ("git" ,git)
       ("guix" ,guix)
       ("util-linux" ,util-linux)
       ("qemu" ,qemu)))
