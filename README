@@ -1,7 +1,7 @@
 ganeti-instance-guix
 ====================
 
-This is a Ganeti OS definition that creates GuixSD instances.
+Create GuixSD instances on Ganeti!
 
 Usage:
 
@@ -17,8 +17,19 @@ Dependencies:
 
 * Working Guix installation.
 * User namespaces enabled in kernel.
+* git (optional)
 * util-linux
 * qemu-img
+
+How it works:
+
+Essentially this is a fancy wrapper for "guix system disk-image".  If
+the "repo_uri" OS parameter is "host", the disk image will be built using
+the local (root) Guix package definitions and copied onto the Ganeti disk
+device.
+
+When "repo_uri" is empty or a git URL, Guix will attempt to build itself
+from the specified git commit before using that to build the disk image.
 
 Limitations:
 
