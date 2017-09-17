@@ -39,40 +39,46 @@ DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
 test -n "${OSP_BRANCH}" && GIT_BRANCH="${OSP_BRANCH}" || GIT_BRANCH=master
 test -n "${OSP_COMMIT}" && GIT_COMMIT="${OSP_COMMIT}" || GIT_COMMIT=HEAD
 
-# Fetch objects from root's Guix checkout, if possible.
-printf "Checking for Guix cache dir... "
-if [ "$(ls -A ${HOME}/.cache/guix/pull)" ]; then
-    GUIX_CACHE_DIR="$(readlink -f ${HOME}/.cache/guix/pull/* | head -n 1)"
+if [ "${GUIX_REPO_URI}" = "host" ]; then
+    ROOT_PROFILE="$(readlink -f ${HOME}/.guix-profile)"
+    export GUIX_ARGS="--ad-hoc guix --expose=${ROOT_PROFILE}=/root/.guix-profile"
 else
-    GUIX_CACHE_DIR=$EMPTY
+    # Fetch objects from root's Guix checkout, if possible.
+    printf "Checking for Guix cache dir... "
+    if [ "$(ls -A ${HOME}/.cache/guix/pull)" ]; then
+	GUIX_CACHE_DIR="$(readlink -f ${HOME}/.cache/guix/pull/* | head -n 1)"
+    else
+	GUIX_CACHE_DIR=$EMPTY
+    fi
+    echo $GUIX_CACHE_DIR
+
+    # Using a container avoids having to set up GIT_SSL_CAINFO manually.
+    echo "Cloning ${GIT_BRANCH}..."
+    $GUIX environment -C -N --share=$GIT_CHECKOUT=$GIT_CHECKOUT \
+	  --expose=$GUIX_CACHE_DIR=/guix-checkout \
+	  --ad-hoc git le-certs -- git clone --branch "${GIT_BRANCH}" \
+	  --reference-if-able /guix-checkout --dissociate \
+	  $GIT_CLONE_ARGUMENTS $GUIX_REPO_URI $GIT_CHECKOUT
+
+    # TODO: Verify commit.
+    $GIT -C $GIT_CHECKOUT reset --hard "${GIT_COMMIT}"
+    GUIX_COMMIT=$($GIT -C $GIT_CHECKOUT rev-parse HEAD)
+
+    printf "Hashing repository on version ${GUIX_COMMIT}... "
+    GUIX_SOURCE_CHECKSUM=$($GUIX hash -rx $GIT_CHECKOUT)
+    echo "${GUIX_SOURCE_CHECKSUM}."
+
+    # Make these available to the Guix process.
+    export GUIX_COMMIT
+    export GUIX_SOURCE_CHECKSUM
+
+    export GUIX_ARGS="--ad-hoc -l ${GUIX_BUILD}"
 fi
-echo $GUIX_CACHE_DIR
-
-# Using a container avoids having to set up GIT_SSL_CAINFO manually.
-echo "Cloning ${GIT_BRANCH}..."
-$GUIX environment -C -N --share=$GIT_CHECKOUT=$GIT_CHECKOUT \
-      --expose=$GUIX_CACHE_DIR=/guix-checkout \
-      --ad-hoc git le-certs -- git clone --branch "${GIT_BRANCH}" \
-      --reference-if-able /guix-checkout --dissociate \
-      $GIT_CLONE_ARGUMENTS $GUIX_REPO_URI $GIT_CHECKOUT
-
-# TODO: Verify commit.
-$GIT -C $GIT_CHECKOUT reset --hard "${GIT_COMMIT}"
-GUIX_COMMIT=$($GIT -C $GIT_CHECKOUT rev-parse HEAD)
-
-printf "Hashing repository on version ${GUIX_COMMIT}... "
-GUIX_SOURCE_CHECKSUM=$($GUIX hash -rx $GIT_CHECKOUT)
-echo "${GUIX_SOURCE_CHECKSUM}."
-
-# Make these available to the Guix process.
-export GUIX_BUILD
-export GUIX_COMMIT
-export GUIX_SOURCE_CHECKSUM
 
 # Build a fixed-output derivation of Guix using $GUIX_COMMIT and use
 # it to build a VM image based on the user-supplied config.scm.
 DISK_IMAGE=$(cd $EMPTY && $GUIX environment -C \
-    --ad-hoc -l $GUIX_BUILD \
+    $GUIX_ARGS \
     --expose=$CONFIG_FILE=/config.scm \
     --expose=/var/guix=/var/guix \
     --expose=/gnu/store=/gnu/store \
