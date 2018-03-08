@@ -23,7 +23,7 @@ Dependencies:
 
 How it works:
 
-Essentially this is a fancy wrapper for "guix system disk-image".  If
+Essentially this is a fancy wrapper for "guix system vm-image".  If
 the "repo_uri" OS parameter is "host", the disk image will be built using
 the local (root) Guix package definitions and copied onto the Ganeti disk
 device.
