@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2017 Marius Bakke
+# Copyright (C) 2017, 2018 Marius Bakke
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,12 @@ $GUIX --version
 # TODO: Support plain text for API users.
 echo "${OSP_CONFIG}" | $BASE64 -di > $CONFIG_FILE
 
-DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
+if [ -b $TARGET_DEVICE ]; then
+  DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
+else
+  # Not a real block device.  Assume file disk and just use 'du'.
+  DEVICE_SIZE=$(du --bytes $TARGET_DEVICE)
+fi
 
 test -n "${OSP_BRANCH}" && GIT_BRANCH="${OSP_BRANCH}" || GIT_BRANCH=master
 test -n "${OSP_COMMIT}" && GIT_COMMIT="${OSP_COMMIT}" || GIT_COMMIT=HEAD
