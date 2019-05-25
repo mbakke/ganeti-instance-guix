@@ -16,23 +16,18 @@ $ make && make install
 Dependencies:
 
 * Working Guix installation.
-* User namespaces enabled in kernel.
-* git (optional)
 * util-linux
 * qemu-img
 
 How it works:
 
 Essentially this is a fancy wrapper for "guix system vm-image".  If
-the "repo_uri" OS parameter is "host", the disk image will be built using
-the local (root) Guix package definitions and copied onto the Ganeti disk
-device.
-
-When "repo_uri" is empty or a git URL, Guix will attempt to build itself
-from the specified git commit before using that to build the disk image.
+"repo_uri", "branch" or "commit" is set, the repository will be
+"pulled" before building the virtual machine.  Otherwise the current
+Guix on the host will be used to provision the instance.
 
 Limitations:
 
 * "disk_type" must be 'ide' or similar so /dev/sda is present.
 * Runs with elevated privileges on the host.
-** ...but drops to unprivileged Guix container.
+** Do not use this with untrusted configuration files!

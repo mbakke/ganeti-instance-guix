@@ -1,4 +1,4 @@
-AC_INIT(ganeti-instance-guix, 0.2)
+AC_INIT(ganeti-instance-guix, 0.3)
 
 AC_CONFIG_AUX_DIR(build-aux)
 AC_CONFIG_SRCDIR(configure)
@@ -14,6 +14,24 @@ AC_ARG_WITH([os-dir],
   [os_dir="$withval"],
   [os_dir="$datadir/ganeti/os"])
 AC_SUBST(OS_DIR, $os_dir)
+
+AC_ARG_WITH([guix],
+  [AS_HELP_STRING([--with-guix=GUIX],
+    [the Guix executable to use at run-time]
+    [ (default is the root users Guix)]
+  )],
+  [guix="$withval"],
+  [guix="$localstatedir/guix/profiles/per-user/root/current-guix/bin/guix"])
+AC_SUBST(GUIX, $guix)
+
+AC_ARG_WITH([guixprofiledir],
+  [AS_HELP_STRING([--with-guixprofiledir=DIR],
+    [where to store GC roots for pulled Guix profiles]
+    [ (default is $sysconfdir/ganeti/instance-guix/profiles)]
+  )],
+  [guixprofiledir="$withval"],
+  [guixprofiledir="$sysconfdir/ganeti/instance-guix/profiles"])
+AC_SUBST(GUIXPROFILEDIR, $guixprofiledir)
 
 # Check common programs
 AC_PROG_INSTALL
@@ -36,32 +54,12 @@ then
   AC_MSG_ERROR([blockdev not found, please install util-linux])
 fi
 
-AC_ARG_VAR(GIT, [git path])
-AC_PATH_PROG(GIT, [git], [], [$ROOT_PATH])
-if test -z "$GIT"
-then
-  AC_MSG_ERROR([git command not found])
-fi
-
-AC_ARG_VAR(GUIX, [guix path])
-AC_PATH_PROG(GUIX, [guix], [], [$ROOT_PATH])
-if test -z "$GUIX"
-then
-  AC_MSG_ERROR([guix command not found])
-fi
-
 AC_ARG_VAR(QEMU_IMG, [qemu-img path])
 AC_PATH_PROG(QEMU_IMG, [qemu-img], [], [$ROOT_PATH])
 if test -z "$QEMU_IMG"
 then
   AC_MSG_ERROR([qemu-img command not found])
 fi
-
-# Allow these to be set at configure time.
-AC_SUBST(GUIX_REPO_URI, https://git.savannah.gnu.org/git/guix.git)
-AC_ARG_VAR(GUIX_REPO_URI, Guix repository to clone)
-
-AC_ARG_VAR(GIT_CLONE_ARGUMENTS, Any arguments passed to `git clone`.)
 
 AC_CONFIG_FILES([ Makefile ])
 

@@ -1,4 +1,4 @@
-;;; Copyright © 2017 Marius Bakke
+;;; Copyright © 2017, 2019 Marius Bakke <marius@devup.no>
 ;;;
 ;;; This program is free software: you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@
              (gnu packages base)
              (gnu packages compression)
              (gnu packages linux)
-             (gnu packages package-management)
-             (gnu packages version-control)
              (gnu packages virtualization))
 
 (define %source-dir (dirname (current-filename)))
@@ -36,19 +34,12 @@
                        #:recursive? #t
                        #:select? (git-predicate %source-dir)))
    (build-system gnu-build-system)
-   (arguments
-    `(#:phases
-      (modify-phases %standard-phases
-        (add-after 'unpack 'bootstrap
-          (lambda _ (zero? (system* "sh" "bootstrap")))))))
    (native-inputs
     `(("autoconf" ,autoconf)
       ("automake" ,automake)
       ("lzip" ,lzip)))
    (inputs
     `(("coreutils" ,coreutils)
-      ("git" ,git)
-      ("guix" ,guix)
       ("util-linux" ,util-linux)
       ("qemu" ,qemu)))
    (home-page "https://github.com/mbakke/ganeti-instance-guix")

@@ -1,4 +1,4 @@
 config A base64-encoded Guix OS declaration.
 branch Branch to clone.  Defaults to 'master'.
 commit Must be reachable from <branch>.  Defaults to HEAD.
-repo_uri Guix repository to clone, or "host" to use node-local package definitions.
+repo_uri Guix repository to clone.  Defaults to <https://git.savannah.gnu.org/git/guix.git>.

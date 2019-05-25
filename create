@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2017, 2018 Marius Bakke
+# Copyright (C) 2017, 2018, 2019 Marius Bakke <marius@devup.no>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,12 +20,29 @@ set -e
 . ./common.sh
 
 CONFIG_FILE=$(mktemp) || exit 1
-GIT_CHECKOUT=$(mktemp -d) || exit 1
-EMPTY=$(mktemp -d --suffix EMPTY) || exit 1
-trap "rm -f $CONFIG_FILE ; rm -rf $GIT_CHECKOUT; rm -r $EMPTY" EXIT INT TERM
+GUIX_PULL_PROFILE="${GUIXPROFILEDIR}/${INSTANCE_NAME}"
+trap "rm -f $CONFIG_FILE" EXIT INT TERM
 
-# Make sure we use root's latest Guix package definitions.
-export HOME=/root
+if [ ! -d "$CACHE_DIR" ]; then
+  mkdir -p "$CACHE_DIR"
+fi
+# Make Guix use the specified CACHE_DIR.
+export XDG_CACHE_HOME=$CACHE_DIR
+
+# TODO: Add support for proper channel specifications.
+guix_pull() {
+    local PULL_ARGS="-p $GUIX_PULL_PROFILE"
+    test -n "$OSP_REPO_URI" && PULL_ARGS="${PULL_ARGS} --url=${OSP_REPO_URI}"
+    test -n "$OSP_BRANCH" && PULL_ARGS="${PULL_ARGS} --branch=${OSP_BRANCH}"
+    test -n "$OSP_COMMIT" && PULL_ARGS="${PULL_ARGS} --commit=${OSP_COMMIT}"
+
+    # Add the current Guix to PATH, since (guix scripts pull) needs it.
+    local PATH="$(basename $GUIX):$PATH"
+
+    # Also pass USER, otherwise the profile migration scripts will fail.
+    USER=root $GUIX pull $PULL_ARGS
+}
+
 # Say 'cheeese'.
 $GUIX --version
 
@@ -41,54 +58,17 @@ else
   DEVICE_SIZE=$(du --bytes $TARGET_DEVICE)
 fi
 
-test -n "${OSP_BRANCH}" && GIT_BRANCH="${OSP_BRANCH}" || GIT_BRANCH=master
-test -n "${OSP_COMMIT}" && GIT_COMMIT="${OSP_COMMIT}" || GIT_COMMIT=HEAD
-
-if [ "${GUIX_REPO_URI}" = "host" ]; then
-    ROOT_PROFILE="$(readlink -f ${HOME}/.guix-profile)"
-    export GUIX_ARGS="--ad-hoc guix --expose=${ROOT_PROFILE}=/root/.guix-profile"
-else
-    # Fetch objects from root's Guix checkout, if possible.
-    printf "Checking for Guix cache dir... "
-    if [ "$(ls -A ${HOME}/.cache/guix/pull)" ]; then
-	GUIX_CACHE_DIR="$(readlink -f ${HOME}/.cache/guix/pull/* | head -n 1)"
-    else
-	GUIX_CACHE_DIR=$EMPTY
-    fi
-    echo $GUIX_CACHE_DIR
-
-    # Using a container avoids having to set up GIT_SSL_CAINFO manually.
-    echo "Cloning ${GIT_BRANCH}..."
-    $GUIX environment -C -N --share=$GIT_CHECKOUT=$GIT_CHECKOUT \
-	  --expose=$GUIX_CACHE_DIR=/guix-checkout \
-	  --ad-hoc git le-certs -- git clone --branch "${GIT_BRANCH}" \
-	  --reference-if-able /guix-checkout --dissociate \
-	  $GIT_CLONE_ARGUMENTS $GUIX_REPO_URI $GIT_CHECKOUT
-
-    # TODO: Verify commit.
-    $GIT -C $GIT_CHECKOUT reset --hard "${GIT_COMMIT}"
-    GUIX_COMMIT=$($GIT -C $GIT_CHECKOUT rev-parse HEAD)
-
-    printf "Hashing repository on version ${GUIX_COMMIT}... "
-    GUIX_SOURCE_CHECKSUM=$($GUIX hash -rx $GIT_CHECKOUT)
-    echo "${GUIX_SOURCE_CHECKSUM}."
-
-    # Make these available to the Guix process.
-    export GUIX_COMMIT
-    export GUIX_SOURCE_CHECKSUM
-
-    export GUIX_ARGS="--ad-hoc -l ${GUIX_BUILD}"
+# Pull the user-specified Guix version, if applicable.
+if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
+    guix_pull
+    GUIX="${GUIX_PULL_PROFILE}/bin/guix"
 fi
 
-# Build a fixed-output derivation of Guix using $GUIX_COMMIT and use
-# it to build a VM image based on the user-supplied config.scm.
-DISK_IMAGE=$(cd $EMPTY && $GUIX environment -C \
-    $GUIX_ARGS \
-    --expose=$CONFIG_FILE=/config.scm \
-    --expose=/var/guix=/var/guix \
-    --expose=/gnu/store=/gnu/store \
-    -- guix system vm-image \
-    --image-size=$DEVICE_SIZE /config.scm)
+log_error "Channel information for ${INSTANCE_NAME}:\n$(${GUIX} describe)"
+
+# Build the Guix VM image.  XXX TODO: it would be better to let Guix
+# decide the size, and resize afterwards.
+DISK_IMAGE=$($GUIX system vm-image --image-size=$DEVICE_SIZE $CONFIG_FILE)
 
 # Copy the resulting store item onto the Ganeti disk device.
 $QEMU_IMG dd bs=4M -O raw if=$DISK_IMAGE of=$TARGET_DEVICE

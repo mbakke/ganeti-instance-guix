@@ -4,7 +4,7 @@ osname=$(subst ganeti-instance-,,$(PACKAGE))
 osdir=$(OS_DIR)/$(osname)
 
 dist_os_SCRIPTS = create import export rename verify
-dist_os_DATA = ganeti_api_version parameters.list build.scm
+dist_os_DATA = ganeti_api_version parameters.list
 os_DATA = common.sh
 
 dist_doc_DATA = COPYING README
@@ -18,12 +18,11 @@ EXTRA_DIST = \
 	common.sh.in
 
 do_subst = sed \
+	-e 's,[@]localstatedir[@],$(localstatedir),g' \
 	-e 's,[@]BASE64[@],$(BASE64),g' \
 	-e 's,[@]BLOCKDEV[@],$(BLOCKDEV),g' \
-	-e 's,[@]GIT[@],$(GIT),g' \
-	-e 's,[@]GIT_CLONE_ARGUMENTS[@],$(GIT_CLONE_ARGUMENTS),g' \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
-	-e 's,[@]GUIX_REPO_URI[@],$(GUIX_REPO_URI),g' \
+	-e 's,[@]GUIXPROFILEDIR[@],$(GUIXPROFILEDIR),g' \
 	-e 's,[@]QEMU_IMG[@],$(QEMU_IMG),g'
 
 common.sh: common.sh.in Makefile
