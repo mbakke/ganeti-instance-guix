@@ -28,6 +28,5 @@ Guix on the host will be used to provision the instance.
 
 Limitations:
 
-* "disk_type" must be 'ide' or similar so /dev/sda is present.
 * Runs with elevated privileges on the host.
 ** Do not use this with untrusted configuration files!
