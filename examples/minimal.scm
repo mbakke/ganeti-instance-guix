@@ -24,7 +24,6 @@ Have fun!\n"))
                                   (terminal-outputs '(console))))
   (file-systems (cons (file-system
                         (device "my-root")
-                        (title 'label)
                         (mount-point "/")
                         (type "ext4"))
                       %base-file-systems))
@@ -45,7 +44,7 @@ Have fun!\n"))
 				,(local-file (assoc-ref
 					      (current-source-location)
 					      'filename)))))
-	     (dhcp-client-service)
+	     (service dhcp-client-service-type)
 	     (service openssh-service-type
 		      (openssh-configuration
 		       (permit-root-login #t)))
