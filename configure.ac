@@ -40,13 +40,6 @@ AC_PROG_INSTALL
 ROOT_PATH=[$PATH$PATH_SEPARATOR/sbin$PATH_SEPARATOR/usr/sbin]dnl
 [$PATH_SEPARATOR/usr/local/bin]
 
-AC_ARG_VAR(BASE64, [base64 path])
-AC_PATH_PROG(BASE64, [base64], [], [$ROOT_PATH])
-if test -z "$BASE64"
-then
-  AC_MSG_ERROR([base64 not found, maybe try coreutils])
-fi
-
 AC_ARG_VAR(BLOCKDEV, [blockdev path])
 AC_PATH_PROG(BLOCKDEV, [blockdev], [], [$ROOT_PATH])
 if test -z "$BLOCKDEV"

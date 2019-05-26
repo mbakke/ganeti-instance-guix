@@ -19,7 +19,6 @@ EXTRA_DIST = \
 
 do_subst = sed \
 	-e 's,[@]localstatedir[@],$(localstatedir),g' \
-	-e 's,[@]BASE64[@],$(BASE64),g' \
 	-e 's,[@]BLOCKDEV[@],$(BLOCKDEV),g' \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
 	-e 's,[@]GUIXPROFILEDIR[@],$(GUIXPROFILEDIR),g' \

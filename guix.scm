@@ -19,7 +19,6 @@
              (guix licenses)
              (guix packages)
              (gnu packages autotools)
-             (gnu packages base)
              (gnu packages compression)
              (gnu packages linux)
              (gnu packages virtualization))
@@ -39,8 +38,7 @@
       ("automake" ,automake)
       ("lzip" ,lzip)))
    (inputs
-    `(("coreutils" ,coreutils)
-      ("util-linux" ,util-linux)
+    `(("util-linux" ,util-linux)
       ("qemu" ,qemu)))
    (home-page "https://github.com/mbakke/ganeti-instance-guix")
    (synopsis "Create Guix instances on Ganeti")
