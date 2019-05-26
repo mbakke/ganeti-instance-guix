@@ -70,7 +70,7 @@ log_error "Channel information for ${INSTANCE_NAME}:\n$(${GUIX} describe)"
 # decide the size, and resize afterwards.
 DISK_IMAGE=$($GUIX system vm-image --image-size=$DEVICE_SIZE $CONFIG_FILE)
 
-# Copy the resulting store item onto the Ganeti disk device.
+log_error "Copying $DISK_IMAGE to $TARGET_DEVICE ..."
 $QEMU_IMG dd bs=4M -O raw if=$DISK_IMAGE of=$TARGET_DEVICE
 
 exit 0

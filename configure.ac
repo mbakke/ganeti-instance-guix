@@ -26,7 +26,7 @@ AC_SUBST(GUIX, $guix)
 
 AC_ARG_WITH([guixprofiledir],
   [AS_HELP_STRING([--with-guixprofiledir=DIR],
-    [where to store GC roots for pulled Guix profiles]
+    [where to store the instance-specific Guix profiles]
     [ (default is $sysconfdir/ganeti/instance-guix/profiles)]
   )],
   [guixprofiledir="$withval"],
