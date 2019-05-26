@@ -3,7 +3,7 @@
 (use-package-modules disk nvi)
 
 (define vm-image-motd (plain-file "motd" "
-Welcome to GuixSD on Ganeti!
+Welcome to Guix on Ganeti!
 
 This configuration file is available at /etc/current-config.scm.  You
 probably want to make a copy of this file, tweak it to your needs, and

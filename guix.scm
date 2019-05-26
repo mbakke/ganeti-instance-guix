@@ -43,9 +43,9 @@
       ("util-linux" ,util-linux)
       ("qemu" ,qemu)))
    (home-page "https://github.com/mbakke/ganeti-instance-guix")
-   (synopsis "Create GuixSD instances on Ganeti")
+   (synopsis "Create Guix instances on Ganeti")
    (description
-    "@code{instance-guix} is a Ganeti OS definition that creates GuixSD instances.")
+    "@code{instance-guix} is a Ganeti OS definition that creates Guix instances.")
    (license gpl3+)))
 
 ganeti-instance-guix

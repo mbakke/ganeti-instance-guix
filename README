@@ -1,7 +1,7 @@
 ganeti-instance-guix
 ====================
 
-Create GuixSD instances on Ganeti!
+Create Guix instances on Ganeti!
 
 Usage:
 
