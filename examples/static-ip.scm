@@ -1,0 +1,36 @@
+(use-modules (gnu)
+             (srfi srfi-60))
+(use-service-modules networking)
+
+(define (cidr->netmask address)
+  "Convert a CIDR specification such as 10.0.0.0/24 to 255.255.255.0."
+  (let ((mask (string->number (cadr (string-split address #\/)))))
+    (inet-ntop AF_INET
+               (arithmetic-shift (inet-pton AF_INET "255.255.255.255")
+                                 (- 32 mask)))))
+
+(operating-system
+  (host-name "gnu")
+  (timezone "Etc/UTC")
+  (locale "en_US.utf8")
+
+  (kernel-arguments '("console=ttyS0"))
+  (bootloader (grub-configuration (target "/dev/sda")
+                                  (terminal-outputs '(console))))
+
+  (file-systems (cons (file-system
+                        (device "/dev/sda1")
+                        (mount-point "/")
+                        (type "ext4"))
+                      %base-file-systems))
+
+  (users %base-user-accounts)
+  (packages %base-packages)
+
+  (services (cons (static-networking-service
+                   "eth0"
+                   (getenv "NIC_0_IP")
+                   #:netmask (cidr->netmask (getenv "NIC_0_NETWORK_SUBNET"))
+                   #:gateway (getenv "NIC_0_NETWORK_GATEWAY")
+                   #:name-servers '("127.0.0.1"))
+                  %base-services)))

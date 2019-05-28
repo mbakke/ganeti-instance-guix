@@ -12,7 +12,8 @@ dist_doc_DATA = COPYING README
 exampledir = $(docdir)/examples
 
 dist_example_DATA = \
-	examples/minimal.scm
+	examples/minimal.scm \
+	examples/static-ip.scm
 
 EXTRA_DIST = \
 	common.sh.in
