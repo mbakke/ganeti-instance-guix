@@ -1,5 +1,6 @@
 (use-modules (gnu)
-             (srfi srfi-60))
+             (srfi srfi-60)
+             (rnrs io ports))
 (use-service-modules networking)
 
 (define (cidr->netmask address)
@@ -10,8 +11,13 @@
                                  (- 32 mask)))))
 
 (operating-system
-  (host-name "gnu")
-  (timezone "Etc/UTC")
+  (host-name (getenv "INSTANCE_NAME"))
+  ;; Take the hosts time zone, sans trailing newline.
+  (timezone (string-drop-right
+             (call-with-input-file "/etc/timezone"
+               (lambda (port)
+                 (get-string-all port)))
+             1))
   (locale "en_US.utf8")
 
   (kernel-arguments '("console=ttyS0"))
