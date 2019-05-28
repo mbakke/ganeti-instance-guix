@@ -18,12 +18,12 @@ Have fun!\n"))
   (timezone "Etc/UTC")
   (locale "en_US.utf8")
 
-  ;; Assuming /dev/sdX is the target hard disk, and "my-root" is
-  ;; the label of the target root file system.
+  (kernel-arguments '("console=ttyS0"))
   (bootloader (grub-configuration (target "/dev/sda")
                                   (terminal-outputs '(console))))
+
   (file-systems (cons (file-system
-                        (device "my-root")
+                        (device "/dev/sda1")
                         (mount-point "/")
                         (type "ext4"))
                       %base-file-systems))
