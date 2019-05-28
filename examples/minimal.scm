@@ -47,7 +47,9 @@ Have fun!\n"))
 	     (service dhcp-client-service-type)
 	     (service openssh-service-type
 		      (openssh-configuration
-		       (permit-root-login #t)))
+		       (permit-root-login 'without-password)
+                       (authorized-keys
+                        `(("root" ,(local-file "/root/.ssh/authorized_keys"))))))
 	     (modify-services %base-services
               (login-service-type config =>
                                   (login-configuration
