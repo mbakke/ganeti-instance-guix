@@ -13,6 +13,9 @@ Remember to `guix pull` first to fetch the latest package definitions.
 
 Have fun!\n"))
 
+(define %bobs-ssh-key
+  "ssh-ed25519 AAAA.....")
+
 (operating-system
   (host-name "gnu")
   (timezone "Etc/UTC")
@@ -31,7 +34,12 @@ Have fun!\n"))
   ;; This is where user accounts are specified.  The "root"
   ;; account is implicit, and is initially created with the
   ;; empty password.
-  (users %base-user-accounts)
+  (users (cons (user-account
+                (name "bob")
+                (comment "This is Bob.")
+                (group "users")
+                (home-directory "/home/bob"))
+               %base-user-accounts))
 
   ;; Globally-installed packages.
   (packages (cons* nvi parted nss-certs
@@ -47,9 +55,9 @@ Have fun!\n"))
 	     (service dhcp-client-service-type)
 	     (service openssh-service-type
 		      (openssh-configuration
-		       (permit-root-login 'without-password)
+		       (password-authentication? #f)
                        (authorized-keys
-                        `(("root" ,(local-file "/root/.ssh/authorized_keys"))))))
+                        `(("bob" ,(plain-file "bob.pub" %bobs-ssh-key))))))
 	     (modify-services %base-services
               (login-service-type config =>
                                   (login-configuration
