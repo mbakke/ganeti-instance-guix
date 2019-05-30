@@ -38,5 +38,5 @@
                    (getenv "NIC_0_IP")
                    #:netmask (cidr->netmask (getenv "NIC_0_NETWORK_SUBNET"))
                    #:gateway (getenv "NIC_0_NETWORK_GATEWAY")
-                   #:name-servers '("127.0.0.1"))
+                   #:name-servers (list (getenv "NIC_0_NETWORK_GATEWAY")))
                   %base-services)))
