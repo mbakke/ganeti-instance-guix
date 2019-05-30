@@ -49,7 +49,12 @@ $GUIX --version
 # The 'gnt-instance' tool does not like being passed text that can
 # be mistaken for commands, so gibberize it through base64.
 # TODO: Support plain text for API users.
-echo "${OSP_CONFIG}" | base64 -di > $CONFIG_FILE
+if [ -n "$OSP_CONFIG" ]; then
+  echo "${OSP_CONFIG}" | base64 -di > $CONFIG_FILE
+else
+  # If no configuration file was provided, use a default one.
+  cp -L $DEFAULT_CONFIG $CONFIG_FILE
+fi
 
 if [ -b $TARGET_DEVICE ]; then
   DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)

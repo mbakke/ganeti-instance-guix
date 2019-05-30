@@ -35,6 +35,8 @@ AC_SUBST(GUIXPROFILEDIR, $guixprofiledir)
 
 # Check common programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
+AC_PROG_LN_S
 
 # Check for the required programs
 ROOT_PATH=[$PATH$PATH_SEPARATOR/sbin$PATH_SEPARATOR/usr/sbin]dnl

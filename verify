@@ -17,15 +17,6 @@
 
 set -e
 
-case "${OSP_CONFIG}" in
-    "")
-	echo "Configuration file is required."
-	exit 1
-	;;
-    *)
-	;;
-esac
-
 case "${OSP_COMMIT}" in
     "")
 	;;

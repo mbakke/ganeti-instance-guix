@@ -2,6 +2,7 @@ AUTOMAKE_OPTIONS = no-dist-gzip dist-lzip
 
 osname=$(subst ganeti-instance-,,$(PACKAGE))
 osdir=$(OS_DIR)/$(osname)
+variantsdir = $(DESTDIR)$(sysconfdir)/ganeti/instance-guix
 
 dist_os_SCRIPTS = create import export rename verify
 dist_os_DATA = ganeti_api_version parameters.list
@@ -20,6 +21,7 @@ EXTRA_DIST = \
 
 do_subst = sed \
 	-e 's,[@]localstatedir[@],$(localstatedir),g' \
+	-e 's,[@]variantsdir[@],$(variantsdir),g' \
 	-e 's,[@]BLOCKDEV[@],$(BLOCKDEV),g' \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
 	-e 's,[@]GUIXPROFILEDIR[@],$(GUIXPROFILEDIR),g' \
@@ -27,5 +29,13 @@ do_subst = sed \
 
 common.sh: common.sh.in Makefile
 	$(do_subst) < $< > $@
+
+install-exec-local:
+	$(MKDIR_P) $(variantsdir)
+	$(LN_S) $(exampledir)/dynamic.scm $(variantsdir)/default.scm
+	$(MKDIR_P) $(GUIXPROFILEDIR)
+
+uninstall-local:
+	test -L $(variantsdir)/default.scm && rm -f $(variantsdir)/default.scm || true
 
 CLEANFILES = common.sh
