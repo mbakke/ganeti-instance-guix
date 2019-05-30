@@ -1,6 +1,7 @@
 (use-modules (gnu)
              (srfi srfi-60)
              (rnrs io ports))
+(use-package-modules certs)
 (use-service-modules networking)
 
 (define (cidr->netmask address)
@@ -31,7 +32,8 @@
                       %base-file-systems))
 
   (users %base-user-accounts)
-  (packages %base-packages)
+  (packages (append (list nss-certs)
+                    %base-packages))
 
   (services (cons (static-networking-service
                    "eth0"

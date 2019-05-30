@@ -1,6 +1,6 @@
 (use-modules (gnu))
 (use-service-modules networking ssh)
-(use-package-modules disk nvi)
+(use-package-modules certs disk nvi)
 
 (define vm-image-motd (plain-file "motd" "
 Welcome to Guix on Ganeti!
@@ -34,7 +34,7 @@ Have fun!\n"))
   (users %base-user-accounts)
 
   ;; Globally-installed packages.
-  (packages (cons* nvi parted
+  (packages (cons* nvi parted nss-certs
                    %base-packages))
 
   (services (cons*
