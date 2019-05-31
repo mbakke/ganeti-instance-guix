@@ -29,7 +29,7 @@ Behind the scenes, this is a simple wrapper for 'guix system vm-image'.
 
 Installation:
 
-  $ ./configure --with-os-dir=/srv/ganeti/os --sysconfdir=/etc
+  $ ./configure --sysconfdir=/etc --localstatedir=/var
   $ make && sudo make install
 
 Dependencies:
