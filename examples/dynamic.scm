@@ -2,7 +2,7 @@
              (srfi srfi-60)
              (rnrs io ports))
 (use-package-modules certs)
-(use-service-modules networking)
+(use-service-modules networking ssh)
 
 (define (cidr->netmask address)
   "Convert a CIDR specification such as 10.0.0.0/24 to 255.255.255.0."
@@ -35,10 +35,16 @@
   (packages (append (list nss-certs)
                     %base-packages))
 
-  (services (cons (static-networking-service
-                   "eth0"
-                   (getenv "NIC_0_IP")
-                   #:netmask (cidr->netmask (getenv "NIC_0_NETWORK_SUBNET"))
-                   #:gateway (getenv "NIC_0_NETWORK_GATEWAY")
-                   #:name-servers (list (getenv "NIC_0_NETWORK_GATEWAY")))
-                  %base-services)))
+  (services (cons*
+             (static-networking-service
+              "eth0"
+              (getenv "NIC_0_IP")
+              #:netmask (cidr->netmask (getenv "NIC_0_NETWORK_SUBNET"))
+              #:gateway (getenv "NIC_0_NETWORK_GATEWAY")
+              #:name-servers (list (getenv "NIC_0_NETWORK_GATEWAY")))
+             (service openssh-service-type
+                      (openssh-configuration
+                       (permit-root-login 'without-password)
+                       (authorized-keys
+                        `(("root" ,(local-file "/root/.ssh/authorized_keys"))))))
+             %base-services)))
