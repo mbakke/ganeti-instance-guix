@@ -39,18 +39,15 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 
 # Check for the required programs
-ROOT_PATH=[$PATH$PATH_SEPARATOR/sbin$PATH_SEPARATOR/usr/sbin]dnl
-[$PATH_SEPARATOR/usr/local/bin]
-
 AC_ARG_VAR(BLOCKDEV, [blockdev path])
-AC_PATH_PROG(BLOCKDEV, [blockdev], [], [$ROOT_PATH])
+AC_PATH_PROG(BLOCKDEV, [blockdev])
 if test -z "$BLOCKDEV"
 then
   AC_MSG_ERROR([blockdev not found, please install util-linux])
 fi
 
 AC_ARG_VAR(QEMU_IMG, [qemu-img path])
-AC_PATH_PROG(QEMU_IMG, [qemu-img], [], [$ROOT_PATH])
+AC_PATH_PROG(QEMU_IMG, [qemu-img])
 if test -z "$QEMU_IMG"
 then
   AC_MSG_ERROR([qemu-img command not found])
