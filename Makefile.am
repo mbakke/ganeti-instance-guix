@@ -20,7 +20,7 @@ EXTRA_DIST = \
 
 do_subst = sed \
 	-e 's,[@]localstatedir[@],$(localstatedir),g' \
-	-e 's,[@]osdir[@],$(osdir),g' \
+	-e 's,[@]DEFAULT_CONFIG[@],$(DEFAULT_CONFIG),g' \
 	-e 's,[@]BLOCKDEV[@],$(BLOCKDEV),g' \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
 	-e 's,[@]GUIXPROFILEDIR[@],$(GUIXPROFILEDIR),g' \

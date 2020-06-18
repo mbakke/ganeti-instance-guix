@@ -24,7 +24,7 @@ GUIX=@GUIX@
 GUIXPROFILEDIR=@GUIXPROFILEDIR@
 QEMU_IMG=@QEMU_IMG@
 
-DEFAULT_CONFIG="@osdir@/builtin/dynamic.scm"
+DEFAULT_CONFIG=@DEFAULT_CONFIG@
 CACHE_DIR="@localstatedir@/cache/ganeti-instance-guix"
 
 if [ $DISK_COUNT -gt 0 -a -n "$DISK_0_PATH" ]; then

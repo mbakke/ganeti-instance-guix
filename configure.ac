@@ -33,6 +33,15 @@ AC_ARG_WITH([guixprofiledir],
   [guixprofiledir="$sysconfdir/ganeti/instance-guix/profiles"])
 AC_SUBST(GUIXPROFILEDIR, $guixprofiledir)
 
+AC_ARG_WITH([default-config],
+  [AS_HELP_STRING([--with-default-config=FILE],
+    [file to use as default Guix configuration if the config OS parameter is missing]
+    [ (default is $OS_DIR/guix/builtin/dynamic.scm)]
+  )],
+  [default_config="$withval"],
+  [default_config="$OS_DIR/guix/builtin/dynamic.scm"])
+AC_SUBST(DEFAULT_CONFIG, $default_config)
+
 # Check common programs
 AC_PROG_INSTALL
 AC_PROG_MKDIR_P
