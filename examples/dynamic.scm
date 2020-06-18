@@ -38,16 +38,28 @@
   (packages (append (list nss-certs)
                     %base-packages))
 
-  (services (cons*
-             (static-networking-service
-              "eth0"
-              (getenv "NIC_0_IP")
-              #:netmask (cidr->netmask (getenv "NIC_0_NETWORK_SUBNET"))
-              #:gateway (getenv "NIC_0_NETWORK_GATEWAY")
-              #:name-servers (list (getenv "NIC_0_NETWORK_GATEWAY")))
-             (service openssh-service-type
-                      (openssh-configuration
-                       (permit-root-login 'without-password)
-                       (authorized-keys
-                        `(("root" ,(local-file "/root/.ssh/authorized_keys"))))))
-             %base-services)))
+  (services
+   (let ((ip (getenv "NIC_0_IP"))
+         (subnet (getenv "NIC_0_NETWORK_SUBNET"))
+         (gateway (getenv "NIC_0_NETWORK_GATEWAY"))
+         (root-authorizations
+          (cond ((file-exists? "/etc/ssh/authorized_keys.d/root")
+                 "/etc/ssh/authorized_keys.d/root")
+                ((file-exists? "/root/.ssh/authorized_keys")
+                 "/root/.ssh/authorized_keys")
+                (else #f))))
+     (append (list (static-networking-service
+                    "eth0" ip
+                    #:netmask (if subnet
+                                  (cidr->netmask subnet)
+                                  #f)
+                    #:gateway (if gateway gateway #f)
+                    #:name-servers (if gateway (list gateway) '()))
+                   (service openssh-service-type
+                            (openssh-configuration
+                             (permit-root-login 'without-password)
+                             (authorized-keys
+                              (if root-authorizations
+                                  `(("root" ,(local-file root-authorizations)))
+                                  '())))))
+             %base-services))))
