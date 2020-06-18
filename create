@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2017, 2018, 2019 Marius Bakke <marius@devup.no>
+# Copyright (C) 2017, 2018, 2019, 2020 Marius Bakke <marius@devup.no>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,8 +71,11 @@ fi
 
 log_error "Channel information for ${INSTANCE_NAME}:\n$(${GUIX} describe)"
 
-log_error "Building Guix disk image..."
-DISK_IMAGE=$($GUIX system vm-image --image-size=$DEVICE_SIZE $CONFIG_FILE)
+log_error "Building system configuration..."
+"$GUIX" system build "$CONFIG_FILE"
+
+log_error "Creating disk image..."
+DISK_IMAGE=$($GUIX system vm-image --no-offload --image-size=$DEVICE_SIZE $CONFIG_FILE)
 DISK_IMAGE_SIZE=$(du -k $DISK_IMAGE | cut -f1)
 
 log_error "Copying $DISK_IMAGE ($((${DISK_IMAGE_SIZE} / 1024)) MiB) to $TARGET_DEVICE..."
