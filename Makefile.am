@@ -32,7 +32,7 @@ common.sh: common.sh.in Makefile
 
 install-exec-local:
 	$(MKDIR_P) $(variantsdir)
-	$(LN_S) $(exampledir)/dynamic.scm $(variantsdir)/default.scm
+	$(LN_S) -f $(exampledir)/dynamic.scm $(variantsdir)/default.scm
 	$(MKDIR_P) $(GUIXPROFILEDIR)
 
 uninstall-local:
