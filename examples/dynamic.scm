@@ -1,4 +1,5 @@
 (use-modules (gnu)
+             (ice-9 match)
              (srfi srfi-60)
              (rnrs io ports))
 (use-package-modules certs)
@@ -6,7 +7,9 @@
 
 (define (cidr->netmask address)
   "Convert a CIDR specification such as 10.0.0.0/24 to 255.255.255.0."
-  (let ((mask (string->number (cadr (string-split address #\/)))))
+  (let ((mask (string->number (match (string-split address #\/)
+                                ((address mask) mask)
+                                (_ "32")))))
     (inet-ntop AF_INET
                (arithmetic-shift (inet-pton AF_INET "255.255.255.255")
                                  (- 32 mask)))))
