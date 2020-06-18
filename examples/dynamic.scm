@@ -16,12 +16,12 @@
 
 (operating-system
   (host-name (getenv "INSTANCE_NAME"))
-  ;; Take the hosts time zone, sans trailing newline.
-  (timezone (string-drop-right
+  ;; Take the hosts time zone, sans trailing newline if present.
+  (timezone (string-trim-right
              (call-with-input-file "/etc/timezone"
                (lambda (port)
                  (get-string-all port)))
-             1))
+            #\newline))
   (locale "en_US.utf8")
 
   (kernel-arguments '("console=ttyS0"))
