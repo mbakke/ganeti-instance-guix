@@ -3,7 +3,7 @@ AC_INIT(ganeti-instance-guix, 0.3.1)
 AC_CONFIG_AUX_DIR(build-aux)
 AC_CONFIG_SRCDIR(configure)
 
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign -Wall -Wno-portability])
 
 # --with-os-dir=...
 AC_ARG_WITH([os-dir],
