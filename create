@@ -60,7 +60,7 @@ if [ -b $TARGET_DEVICE ]; then
     DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
 else
     # Not a real block device.  Assume file disk and just use 'du'.
-    DEVICE_SIZE=$(du --bytes $TARGET_DEVICE)
+    DEVICE_SIZE=$(du --bytes $TARGET_DEVICE | cut -f1)
 fi
 
 # Pull the user-specified Guix version, if applicable.
