@@ -24,15 +24,6 @@ AC_ARG_WITH([guix],
   [guix="$localstatedir/guix/profiles/per-user/root/current-guix/bin/guix"])
 AC_SUBST(GUIX, $guix)
 
-AC_ARG_WITH([guixprofiledir],
-  [AS_HELP_STRING([--with-guixprofiledir=DIR],
-    [where to store the instance-specific Guix profiles]
-    [ (default is $sysconfdir/ganeti/instance-guix/profiles)]
-  )],
-  [guixprofiledir="$withval"],
-  [guixprofiledir="$sysconfdir/ganeti/instance-guix/profiles"])
-AC_SUBST(GUIXPROFILEDIR, $guixprofiledir)
-
 AC_ARG_WITH([gcrootsdir],
   [AS_HELP_STRING([--with-gcrootsdir=DIR],
     [where to store GC roots for the built system configurations]

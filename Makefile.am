@@ -23,7 +23,6 @@ do_subst = sed \
 	-e 's,[@]DEFAULT_CONFIG[@],$(DEFAULT_CONFIG),g' \
 	-e 's,[@]BLOCKDEV[@],$(BLOCKDEV),g' \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
-	-e 's,[@]GUIXPROFILEDIR[@],$(GUIXPROFILEDIR),g' \
 	-e 's,[@]GCROOTSDIR[@],$(GCROOTSDIR),g' \
 	-e 's,[@]QEMU_IMG[@],$(QEMU_IMG),g'
 

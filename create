@@ -20,7 +20,6 @@ set -e
 . ./common.sh
 
 CONFIG_FILE=$(mktemp) || exit 1
-GUIX_PULL_PROFILE="${GUIXPROFILEDIR}/${INSTANCE_NAME}"
 trap "rm -f $CONFIG_FILE" EXIT INT TERM
 
 if [ ! -d "$CACHE_DIR" ]; then
@@ -32,22 +31,8 @@ fi
 
 GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
 
-# Make Guix use the specified CACHE_DIR.
+# Make Guix use the specified CACHE_DIR to store Guile and Git caches.
 export XDG_CACHE_HOME=$CACHE_DIR
-
-# TODO: Add support for proper channel specifications.
-guix_pull() {
-    local PULL_ARGS="-p $GUIX_PULL_PROFILE"
-    test -n "$OSP_REPO_URI" && PULL_ARGS="${PULL_ARGS} --url=${OSP_REPO_URI}"
-    test -n "$OSP_BRANCH" && PULL_ARGS="${PULL_ARGS} --branch=${OSP_BRANCH}"
-    test -n "$OSP_COMMIT" && PULL_ARGS="${PULL_ARGS} --commit=${OSP_COMMIT}"
-
-    # Add the current Guix to PATH, since (guix scripts pull) needs it.
-    local PATH="$(basename $GUIX):$PATH"
-
-    # Also pass USER, otherwise the profile migration scripts will fail.
-    USER=root $GUIX pull $PULL_ARGS
-}
 
 # Say 'cheeese'.
 $GUIX --version
@@ -69,17 +54,21 @@ else
     DEVICE_SIZE=$(du --bytes $TARGET_DEVICE | cut -f1)
 fi
 
-# Pull the user-specified Guix version, if applicable.
-if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
-    guix_pull
-    GUIX="${GUIX_PULL_PROFILE}/bin/guix"
+# Prepare the time machine if relevant.
+if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" ]; then
+    GUIX="$GUIX time-machine"
+    if [ -n "OSP_COMMIT" ]; then
+        GUIX="$GUIX --commit=$OSP_COMMIT"
+    fi
+    if [ -n "$OSP_BRANCH" ]; then
+        GUIX="$GUIX --branch=$OSP_BRANCH"
+    fi
+    GUIX="$GUIX -- "
 fi
-
-log_error "Channel information for ${INSTANCE_NAME}:\n$(${GUIX} describe)"
 
 log_error "Building system configuration..."
 [[ -L "$GC_ROOT" ]] && rm -f "$GC_ROOT"
-"$GUIX" system build -r "$GC_ROOT" "$CONFIG_FILE"
+$GUIX system build -r "$GC_ROOT" "$CONFIG_FILE"
 
 log_error "Creating disk image..."
 DISK_IMAGE=$($GUIX system vm-image --no-offload --image-size=$DEVICE_SIZE $CONFIG_FILE)
