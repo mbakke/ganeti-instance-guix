@@ -26,6 +26,12 @@ trap "rm -f $CONFIG_FILE" EXIT INT TERM
 if [ ! -d "$CACHE_DIR" ]; then
     mkdir -p "$CACHE_DIR"
 fi
+if [ ! -d "$GCROOTSDIR" ]; then
+    mkdir -p "$GCROOTSDIR"
+fi
+
+GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
+
 # Make Guix use the specified CACHE_DIR.
 export XDG_CACHE_HOME=$CACHE_DIR
 
@@ -72,7 +78,8 @@ fi
 log_error "Channel information for ${INSTANCE_NAME}:\n$(${GUIX} describe)"
 
 log_error "Building system configuration..."
-"$GUIX" system build "$CONFIG_FILE"
+[[ -L "$GC_ROOT" ]] && rm -f "$GC_ROOT"
+"$GUIX" system build -r "$GC_ROOT" "$CONFIG_FILE"
 
 log_error "Creating disk image..."
 DISK_IMAGE=$($GUIX system vm-image --no-offload --image-size=$DEVICE_SIZE $CONFIG_FILE)

@@ -33,6 +33,15 @@ AC_ARG_WITH([guixprofiledir],
   [guixprofiledir="$sysconfdir/ganeti/instance-guix/profiles"])
 AC_SUBST(GUIXPROFILEDIR, $guixprofiledir)
 
+AC_ARG_WITH([gcrootsdir],
+  [AS_HELP_STRING([--with-gcrootsdir=DIR],
+    [where to store GC roots for the built system configurations]
+    [ (default is $localstatedir/guix/gcroots/ganeti/instance-guix)]
+  )],
+  [gcrootsdir="$withval"],
+  [gcrootsdir="$localstatedir/guix/gcroots/ganeti/instance-guix"])
+AC_SUBST(GCROOTSDIR, $gcrootsdir)
+
 AC_ARG_WITH([default-config],
   [AS_HELP_STRING([--with-default-config=FILE],
     [file to use as default Guix configuration if the config OS parameter is missing]
