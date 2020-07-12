@@ -55,8 +55,11 @@ else
 fi
 
 # Prepare the time machine if relevant.
-if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" ]; then
+if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
     GUIX="$GUIX time-machine"
+    if [ -n "OSP_REPO_URI" ]; then
+        GUIX="$GUIX --url=$OSP_REPO_URI"
+    fi
     if [ -n "OSP_COMMIT" ]; then
         GUIX="$GUIX --commit=$OSP_COMMIT"
     fi
