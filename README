@@ -18,9 +18,7 @@ A custom configuration file can be provided by an OS parameter:
 See the examples directory for a generic configuration that uses DHCP.
 
 Other supported parameters are "commit", "branch", and "repo_uri".  If
-set, 'guix pull' will be invoked before building the image.  The pulled
-Guix version is saved to
-/etc/ganeti/instance-guix/profiles/$INSTANCE_NAME for posterity.
+set, 'guix time-machine' will be used to build the image.
 
 If neither are set, the hosts (root user) Guix version will be used to
 build the virtual machine image.
