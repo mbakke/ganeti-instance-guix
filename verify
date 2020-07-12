@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2017 Marius Bakke
+# Copyright (C) 2017, 2020 Marius Bakke
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@ case "${OSP_COMMIT}" in
 	echo "Nice try."
 	exit 1
 	;;
-    *[!a-z0-9-]*)
-	echo "Commit can only contain alphanumeric characters and '-'."
+    *[!a-f0-9]*)
+	echo "Commit must be a hexadecimal string."
 	exit 1
 	;;
     *)
