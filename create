@@ -19,9 +19,6 @@ set -e
 
 . ./common.sh
 
-CONFIG_FILE=$(mktemp) || exit 1
-trap "rm -f $CONFIG_FILE" EXIT INT TERM
-
 if [ ! -d "$CACHE_DIR" ]; then
     mkdir -p "$CACHE_DIR"
 fi
@@ -36,16 +33,6 @@ export XDG_CACHE_HOME=$CACHE_DIR
 
 # Say 'cheeese'.
 $GUIX --version
-
-# The 'gnt-instance' tool does not like being passed text that can
-# be mistaken for commands, so gibberize it through base64.
-# TODO: Support plain text for API users.
-if [ -n "$OSP_CONFIG" ]; then
-    echo "${OSP_CONFIG}" | base64 -di > $CONFIG_FILE
-else
-    log "No configuration provided, using ${DEFAULT_CONFIG}."
-    cp -L $DEFAULT_CONFIG $CONFIG_FILE
-fi
 
 if [ -b $TARGET_DEVICE ]; then
     DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
@@ -74,12 +61,12 @@ if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
     GUIX="$GUIX -- "
 fi
 
-log "Building system configuration..."
+log "Building the system configuration for $VARIANT_CONFIG..."
 [[ -L "$GC_ROOT" ]] && rm -f "$GC_ROOT"
-$GUIX system build --no-grafts -r "$GC_ROOT" "$CONFIG_FILE"
+$GUIX system build --no-grafts -r "$GC_ROOT" "$VARIANT_CONFIG"
 
 log "Creating disk image..."
-DISK_IMAGE=$($GUIX system vm-image --no-offload --image-size=$DEVICE_SIZE $CONFIG_FILE)
+DISK_IMAGE=$($GUIX system vm-image --no-offload --image-size=$DEVICE_SIZE "$VARIANT_CONFIG")
 DISK_IMAGE_SIZE=$(du -k $DISK_IMAGE | cut -f1)
 
 log "Copying $DISK_IMAGE ($((${DISK_IMAGE_SIZE} / 1024)) MiB) to $TARGET_DEVICE..."

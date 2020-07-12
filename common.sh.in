@@ -23,9 +23,21 @@ BLOCKDEV=@BLOCKDEV@
 GUIX=@GUIX@
 QEMU_IMG=@QEMU_IMG@
 
-DEFAULT_CONFIG=@DEFAULT_CONFIG@
 CACHE_DIR="@localstatedir@/cache/ganeti-instance-guix"
 GCROOTSDIR=@GCROOTSDIR@
+VARIANTS_DIR=@VARIANTSDIR@
+
+if [ -n "$OS_VARIANT" ]; then
+    if [ ! -d "$VARIANTS_DIR" ]; then
+        log "OS Variants directory $VARIANTS_DIR doesn't exist"
+        exit 1
+    fi
+    VARIANT_CONFIG="$VARIANTS_DIR/$OS_VARIANT.scm"
+    if [ ! -e "$VARIANT_CONFIG" ]; then
+        log "Configuration file for $OS_VARIANT does not exist"
+        exit 1
+    fi
+fi
 
 if [ $DISK_COUNT -gt 0 -a -n "$DISK_0_PATH" ]; then
     TARGET_DEVICE=$DISK_0_PATH

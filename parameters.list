@@ -1,4 +1,3 @@
-config A base64-encoded Guix OS declaration.
 branch Optionally use the specified branch to build the image.
 commit Optionally use this specific commit to build the image.
 repo_uri If set, build the image using this Guix repository URL.  If commit and branch are omitted, the master branch is used.

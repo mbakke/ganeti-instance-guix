@@ -15,6 +15,15 @@ AC_ARG_WITH([os-dir],
   [os_dir="$datadir/ganeti/os"])
 AC_SUBST(OS_DIR, $os_dir)
 
+AC_ARG_WITH([variantsdir],
+  [AS_HELP_STRING([--with-variantsdir=DIR],
+    [where variants are expected to be found]
+    [ (default is $sysconfdir/ganeti/instance-guix/variants)]
+  )],
+  [variantsdir="$withval"],
+  [variantsdir="$sysconfdir/ganeti/instance-guix/variants"])
+AC_SUBST(VARIANTSDIR, $variantsdir)
+
 AC_ARG_WITH([guix],
   [AS_HELP_STRING([--with-guix=GUIX],
     [the Guix executable to use at run-time]
@@ -32,15 +41,6 @@ AC_ARG_WITH([gcrootsdir],
   [gcrootsdir="$withval"],
   [gcrootsdir="$localstatedir/guix/gcroots/ganeti/instance-guix"])
 AC_SUBST(GCROOTSDIR, $gcrootsdir)
-
-AC_ARG_WITH([default-config],
-  [AS_HELP_STRING([--with-default-config=FILE],
-    [file to use as default Guix configuration if the config OS parameter is missing]
-    [ (default is $OS_DIR/guix/builtin/dynamic.scm)]
-  )],
-  [default_config="$withval"],
-  [default_config="$OS_DIR/guix/builtin/dynamic.scm"])
-AC_SUBST(DEFAULT_CONFIG, $default_config)
 
 # Check common programs
 AC_PROG_INSTALL
