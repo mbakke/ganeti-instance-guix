@@ -74,7 +74,7 @@ fi
 
 log_error "Building system configuration..."
 [[ -L "$GC_ROOT" ]] && rm -f "$GC_ROOT"
-$GUIX system build -r "$GC_ROOT" "$CONFIG_FILE"
+$GUIX system build --no-grafts -r "$GC_ROOT" "$CONFIG_FILE"
 
 log_error "Creating disk image..."
 DISK_IMAGE=$($GUIX system vm-image --no-offload --image-size=$DEVICE_SIZE $CONFIG_FILE)
