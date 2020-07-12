@@ -1,4 +1,4 @@
-;;; Copyright © 2017, 2019 Marius Bakke <marius@devup.no>
+;;; Copyright © 2017, 2019, 2020 Marius Bakke <marius@devup.no>
 ;;;
 ;;; This program is free software: you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -13,7 +13,10 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(use-modules (guix build-system gnu)
+(use-modules (ice-9 rdelim)
+             (ice-9 match)
+             (ice-9 regex)
+             (guix build-system gnu)
              (guix gexp)
              (guix git-download)
              (guix licenses)
@@ -25,10 +28,23 @@
 
 (define %source-dir (dirname (current-filename)))
 
+(define version
+  (call-with-input-file "configure.ac"
+    (lambda (port)
+      (let loop ((line (read-line port)))
+        (if (or (eof-object? line)
+                (string-prefix? "AC_INIT" line))
+             (match line
+               ((? string?)
+                (match:substring
+                 (string-match "[0-9]+\\.[0-9a-z\\.-]+" line)))
+               (_ "???"))
+            (loop (read-line port)))))))
+
 (define ganeti-instance-guix
   (package
    (name "ganeti-instance-guix")
-   (version "git")
+   (version version)
    (source (local-file %source-dir
                        #:recursive? #t
                        #:select? (git-predicate %source-dir)))
