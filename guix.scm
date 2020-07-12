@@ -55,7 +55,7 @@
       ("lzip" ,lzip)))
    (inputs
     `(("util-linux" ,util-linux)
-      ("qemu" ,qemu)))
+      ("qemu" ,qemu-minimal)))
    (home-page "https://github.com/mbakke/ganeti-instance-guix")
    (synopsis "Create Guix instances on Ganeti")
    (description
