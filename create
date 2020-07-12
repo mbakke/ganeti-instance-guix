@@ -43,7 +43,7 @@ $GUIX --version
 if [ -n "$OSP_CONFIG" ]; then
     echo "${OSP_CONFIG}" | base64 -di > $CONFIG_FILE
 else
-    log_error "No configuration provided, using ${DEFAULT_CONFIG}."
+    log "No configuration provided, using ${DEFAULT_CONFIG}."
     cp -L $DEFAULT_CONFIG $CONFIG_FILE
 fi
 
@@ -72,19 +72,19 @@ if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
     GUIX="$GUIX -- "
 fi
 
-log_error "Building system configuration..."
+log "Building system configuration..."
 [[ -L "$GC_ROOT" ]] && rm -f "$GC_ROOT"
 $GUIX system build --no-grafts -r "$GC_ROOT" "$CONFIG_FILE"
 
-log_error "Creating disk image..."
+log "Creating disk image..."
 DISK_IMAGE=$($GUIX system vm-image --no-offload --image-size=$DEVICE_SIZE $CONFIG_FILE)
 DISK_IMAGE_SIZE=$(du -k $DISK_IMAGE | cut -f1)
 
-log_error "Copying $DISK_IMAGE ($((${DISK_IMAGE_SIZE} / 1024)) MiB) to $TARGET_DEVICE..."
+log "Copying $DISK_IMAGE ($((${DISK_IMAGE_SIZE} / 1024)) MiB) to $TARGET_DEVICE..."
 start_time=$(date +%s)
 $QEMU_IMG dd bs=4M -O raw if=$DISK_IMAGE of=$TARGET_DEVICE
 elapsed=$(($(date +%s) - $start_time))
 speed=$(($DISK_IMAGE_SIZE / $elapsed))
-log_error "Copied ${DISK_IMAGE_SIZE} KiB in ${elapsed} seconds (${speed} KiB/s)."
+log "Copied ${DISK_IMAGE_SIZE} KiB in ${elapsed} seconds (${speed} KiB/s)."
 
 exit 0

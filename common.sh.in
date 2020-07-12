@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-log_error() {
+log() {
     echo "$@" >&2
 }
 
@@ -30,6 +30,6 @@ GCROOTSDIR=@GCROOTSDIR@
 if [ $DISK_COUNT -gt 0 -a -n "$DISK_0_PATH" ]; then
     TARGET_DEVICE=$DISK_0_PATH
 else
-    log_error "At least one disk is needed."
+    log "At least one disk is needed."
     exit 1
 fi
