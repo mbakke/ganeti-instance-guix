@@ -66,6 +66,9 @@ if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
     if [ -n "$OSP_BRANCH" ]; then
         GUIX="$GUIX --branch=$OSP_BRANCH"
     fi
+    if [ -n "$OSP_DISABLE_AUTHENTICATION" ]; then
+        GUIX="$GUIX --disable-authentication"
+    fi
     GUIX="$GUIX -- "
 fi
 
