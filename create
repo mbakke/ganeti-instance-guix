@@ -69,6 +69,8 @@ if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
     if [ -n "$OSP_DISABLE_AUTHENTICATION" ]; then
         GUIX="$GUIX --disable-authentication"
     fi
+    log "Invoking time machine with the following parameters:"
+    log "    $(echo GUIX | cut --complement -f1,2 -d' ')"
     GUIX="$GUIX -- "
 fi
 
