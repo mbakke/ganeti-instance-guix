@@ -18,8 +18,8 @@
              (ice-9 regex)
              (guix build-system gnu)
              (guix gexp)
-             (guix git-download)
-             (guix licenses)
+             ((guix git-download) #:select (git-predicate))
+             ((guix licenses) #:select (gpl3+))
              (guix packages)
              (gnu packages autotools)
              (gnu packages compression)
@@ -34,11 +34,11 @@
       (let loop ((line (read-line port)))
         (if (or (eof-object? line)
                 (string-prefix? "AC_INIT" line))
-             (match line
-               ((? string?)
-                (match:substring
-                 (string-match "[0-9]+\\.[0-9a-z\\.-]+" line)))
-               (_ "???"))
+            (match line
+              ((? string?)
+               (match:substring
+                (string-match "[0-9]+\\.[0-9a-z\\.-]+" line)))
+              (_ "???"))
             (loop (read-line port)))))))
 
 (define ganeti-instance-guix
