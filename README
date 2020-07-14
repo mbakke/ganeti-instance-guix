@@ -5,23 +5,22 @@ Create Guix instances on Ganeti!
 
 Usage:
 
-  $ gnt-instance add -o guix my-instance
+  $ gnt-instance add -o guix+default my-instance
 
 The default configuration assumes gnt-network is configured and will
 create an instance with static networking, a serial console, and an SSH
 server that reuses the hosts "/root/.ssh/authorized_keys" for 'root'.
 
-A custom configuration file can be provided by an OS parameter:
+It is possible to use a specific Guix commit via an OS parameter:
 
-  $ gnt-instance add -o guix -O "config=$(base64 /path/to/config.scm)"
+  $ gnt-instance add -o guix+default -O "commit=7c86ef098d2"
 
-See the examples directory for a generic configuration that uses DHCP.
+Other supported parameters are "branch", "repo_uri", and
+"disable_authentication".  If any parameter is set, 'guix time-machine'
+will be used to build the image.
 
-Other supported parameters are "commit", "branch", and "repo_uri".  If
-set, 'guix time-machine' will be used to build the image.
-
-If neither are set, the hosts (root user) Guix version will be used to
-build the virtual machine image.
+If no parameters are specified, the hosts (root user) Guix version will be
+used to build the virtual machine image.
 
 Behind the scenes, this is a simple wrapper for 'guix system vm-image'.
 
@@ -38,7 +37,6 @@ Dependencies:
 
 Limitations:
 
-* Configurations must consist of a single file.
 * No import and export functionality yet.
 * Runs with elevated privileges on the host.
 ** Do not use this with untrusted configuration files!
