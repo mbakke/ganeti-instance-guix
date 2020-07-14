@@ -1,0 +1,13 @@
+Version 0.5
+-----------
+* Add support for variants.
+* Log the time machine command line.
+* Disable grafts for the initial system build.
+
+Version 0.4
+------------
+
+* Create GC roots of system builds.
+* Fix for file disks.
+* Use 'guix time-machine' for custom repository or commit.
+* Improve builtin configuration.
