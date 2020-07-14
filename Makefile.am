@@ -1,5 +1,3 @@
-AUTOMAKE_OPTIONS = no-dist-gzip dist-lzip
-
 osname=$(subst ganeti-instance-,,$(PACKAGE))
 osdir=$(OS_DIR)/$(osname)
 variantsdir=$(DESTDIR)$(VARIANTSDIR)

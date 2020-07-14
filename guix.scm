@@ -22,7 +22,6 @@
              ((guix licenses) #:select (gpl3+))
              (guix packages)
              (gnu packages autotools)
-             (gnu packages compression)
              (gnu packages linux)
              (gnu packages virtualization))
 
@@ -51,8 +50,7 @@
    (build-system gnu-build-system)
    (native-inputs
     `(("autoconf" ,autoconf)
-      ("automake" ,automake)
-      ("lzip" ,lzip)))
+      ("automake" ,automake)))
    (inputs
     `(("util-linux" ,util-linux)
       ("qemu" ,qemu-minimal)))
