@@ -1,3 +1,9 @@
+Version 0.6
+-----------
+* Expose the Guix --system and --target options as OS parameters.
+* Fix some time-machine permutations.
+* Really fix file disk support.
+
 Version 0.5
 -----------
 * Add support for variants.
