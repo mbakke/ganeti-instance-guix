@@ -64,12 +64,21 @@ if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
     GUIX="$GUIX -- "
 fi
 
-log "Building the system configuration for $VARIANT_CONFIG..."
+GUIX="$GUIX system"
+
+if [ -n "$OSP_SYSTEM" ]; then
+    GUIX="$GUIX --system=$OSP_SYSTEM"
+fi
+if [ -n "$OSP_TARGET" ]; then
+    GUIX="$GUIX --target=$OSP_TARGET"
+fi
+
+log "Invoking $GUIX build $VARIANT_CONFIG..."
 [[ -L "$GC_ROOT" ]] && rm -f "$GC_ROOT"
-$GUIX system build --no-grafts -r "$GC_ROOT" "$VARIANT_CONFIG"
+$GUIX build --no-grafts -r "$GC_ROOT" "$VARIANT_CONFIG"
 
 log "Creating disk image..."
-DISK_IMAGE=$($GUIX system vm-image --no-offload --image-size=$DEVICE_SIZE "$VARIANT_CONFIG")
+DISK_IMAGE=$($GUIX vm-image --no-offload --image-size=$DEVICE_SIZE "$VARIANT_CONFIG")
 DISK_IMAGE_SIZE=$(du -k $DISK_IMAGE | cut -f1)
 
 log "Copying $DISK_IMAGE ($((${DISK_IMAGE_SIZE} / 1024)) MiB) to $TARGET_DEVICE..."

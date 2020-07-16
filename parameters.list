@@ -1,3 +1,5 @@
+system Build a system configuration for the given system, i.e. i686-linux.
+target Build a system configuration for the given target triplet, i.e. i586-pc-gnu.
 branch Optionally use the specified branch to build the image.
 commit Optionally use this specific commit to build the image.
 repo_uri If set, build the image using this Guix repository URL.  If commit and branch are omitted, the master branch is used.
