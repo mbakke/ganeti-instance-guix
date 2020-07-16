@@ -34,7 +34,10 @@ export XDG_CACHE_HOME=$CACHE_DIR
 # Say 'cheeese'.
 $GUIX --version
 
-if [ -b $TARGET_DEVICE ]; then
+# The DISK_N_SIZE variable was added in Ganeti 3.0.
+if [ -n "$DISK_0_SIZE" ]; then
+    DEVICE_SIZE=$(($DISK_0_SIZE * 1024 * 1024))
+elif [ -b $TARGET_DEVICE ]; then
     DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
 else
     # Not a real block device.  Assume file disk and just use 'du'.
