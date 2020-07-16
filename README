@@ -16,11 +16,14 @@ It is possible to use a specific Guix commit via an OS parameter:
   $ gnt-instance add -o guix+default -O "commit=7c86ef098d2"
 
 Other supported parameters are "branch", "repo_uri", and
-"disable_authentication".  If any parameter is set, 'guix time-machine'
-will be used to build the image.
+"disable_authentication".  If any of these parameters are set,
+'guix time-machine' will be used to build the image.  Otherwise the hosts
+(root user) Guix version will be used.
 
-If no parameters are specified, the hosts (root user) Guix version will be
-used to build the virtual machine image.
+You can also build for a specific architecture by passing the 'system'
+parameter, and even cross-compile a disk image by passing 'target'.
+
+  $ gnt-instance add -o guix+default -O system=i686-linux
 
 Behind the scenes, this is a simple wrapper for 'guix system vm-image'.
 
