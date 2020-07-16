@@ -1,4 +1,4 @@
-AC_INIT(ganeti-instance-guix, 0.5)
+AC_INIT(ganeti-instance-guix, 0.6)
 
 AC_CONFIG_AUX_DIR(build-aux)
 AC_CONFIG_SRCDIR(configure)
