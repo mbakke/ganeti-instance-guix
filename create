@@ -75,7 +75,7 @@ fi
 
 log "Invoking $GUIX build $VARIANT_CONFIG..."
 [[ -L "$GC_ROOT" ]] && rm -f "$GC_ROOT"
-$GUIX build --no-grafts -r "$GC_ROOT" "$VARIANT_CONFIG"
+$GUIX build --fallback --no-grafts -r "$GC_ROOT" "$VARIANT_CONFIG"
 
 log "Creating disk image..."
 DISK_IMAGE=$($GUIX vm-image --no-offload --image-size=$DEVICE_SIZE "$VARIANT_CONFIG")
