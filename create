@@ -78,7 +78,11 @@ log "Invoking $GUIX build $VARIANT_CONFIG..."
 $GUIX build --fallback --no-grafts -r "$GC_ROOT" "$VARIANT_CONFIG"
 
 log "Creating disk image..."
-DISK_IMAGE=$($GUIX vm-image --no-offload --image-size=$DEVICE_SIZE "$VARIANT_CONFIG")
+# Guix creates images with extra space based on an ESP partition and root file system offset
+# so we must remove this amount of bytes from the DEVICE_SIZE.
+# See lines 96, 103 and 647 here: https://github.com/guix-mirror/guix/blob/master/gnu/system/image.scm#96
+DEVICE_SIZE=$(( DEVICE_SIZE - $(( $(( 2**20 * 40)) + $(( 512*2048)) )) ))
+DISK_IMAGE=$($GUIX image --no-offload --image-size=$DEVICE_SIZE "$VARIANT_CONFIG")
 DISK_IMAGE_SIZE=$(du -k $DISK_IMAGE | cut -f1)
 
 log "Copying $DISK_IMAGE ($((${DISK_IMAGE_SIZE} / 1024)) MiB) to $TARGET_DEVICE..."
