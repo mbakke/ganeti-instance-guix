@@ -1,3 +1,8 @@
+Version 0.6.1
+-----------
+* Subtract EFI partition size from DISK_SIZE to work around Guix
+  calculation bug (thanks @methuselah-0).
+
 Version 0.6
 -----------
 * Expose the Guix --system and --target options as OS parameters.
