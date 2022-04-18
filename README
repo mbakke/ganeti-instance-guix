@@ -13,7 +13,7 @@ server that reuses the hosts "/root/.ssh/authorized_keys" for 'root'.
 
 It is possible to use a specific Guix commit via an OS parameter:
 
-  $ gnt-instance add -o guix+default -O "commit=7c86ef098d2"
+  $ gnt-instance add -o guix+default -O "commit=7c86ef098d2,filesystem=ext4,layout=basic"
 
 Other supported parameters are "branch", "repo_uri", and
 "disable_authentication".  If any of these parameters are set,
@@ -25,7 +25,8 @@ parameter, and even cross-compile a disk image by passing 'target'.
 
   $ gnt-instance add -o guix+default -O system=i686-linux
 
-Behind the scenes, this is a simple wrapper for 'guix system vm-image'.
+Behind the scenes, this uses 'guix system init' to deploy a configuration
+that matches a filesystem and partitioning layout combination.
 
 Installation:
 
@@ -36,7 +37,13 @@ Dependencies:
 
 * Guix
 * util-linux
-* qemu-img
+* xfsprogs
+* btrfs-progs
+* lvm2
+* multipath-tools
+* jq
+* e2fsprogs
+* parted
 
 Limitations:
 
