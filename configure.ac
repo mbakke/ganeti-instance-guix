@@ -48,18 +48,130 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 
 # Check for the required programs
-AC_ARG_VAR(BLOCKDEV, [blockdev path])
+AC_ARG_VAR(BLOCKDEV, [blockdev path]) # util-linux also installs wipefs, umount etc. thats also needed.
 AC_PATH_PROG(BLOCKDEV, [blockdev])
 if test -z "$BLOCKDEV"
 then
   AC_MSG_ERROR([blockdev not found, please install util-linux])
 fi
 
-AC_ARG_VAR(QEMU_IMG, [qemu-img path])
-AC_PATH_PROG(QEMU_IMG, [qemu-img])
-if test -z "$QEMU_IMG"
+AC_ARG_VAR(MOUNT, [mount path])
+AC_PATH_PROG(MOUNT, [mount])
+if test -z "$MOUNT"
 then
-  AC_MSG_ERROR([qemu-img command not found])
+  AC_MSG_ERROR([mount not found, please install util-linux])
+fi
+
+AC_ARG_VAR(UMOUNT, [umount path])
+AC_PATH_PROG(UMOUNT, [umount])
+if test -z "$UMOUNT"
+then
+  AC_MSG_ERROR([umount not found, please install util-linux])
+fi
+
+AC_ARG_VAR(WIPEFS, [wipefs path])
+AC_PATH_PROG(WIPEFS, [wipefs])
+if test -z "$WIPEFS"
+then
+  AC_MSG_ERROR([wipefs not found, please install util-linux])
+fi
+
+AC_ARG_VAR(FALLOCATE, [fallocate path])
+AC_PATH_PROG(FALLOCATE, [fallocate])
+if test -z "$FALLOCATE"
+then
+  AC_MSG_ERROR([fallocate not found, please install util-linux])
+fi
+
+AC_ARG_VAR(MKSWAP, [mkswap path])
+AC_PATH_PROG(MKSWAP, [mkswap])
+if test -z "$MKSWAP"
+then
+  AC_MSG_ERROR([mkswap not found, please install util-linux])
+fi
+
+AC_ARG_VAR(CHATTR, [chattr path]) # e2fsprogs also covers mkfs.ext{2,3,4}
+AC_PATH_PROG(CHATTR, [chattr])
+if test -z "$CHATTR"
+then
+  AC_MSG_ERROR([chattr not found, please install e2fsprogs])
+fi
+
+AC_ARG_VAR(JQ, [jq path])
+AC_PATH_PROG(JQ, [jq])
+if test -z "$JQ"
+then
+  AC_MSG_ERROR([jq not found, please install jq])
+fi
+
+AC_ARG_VAR(PARTED, [parted path])
+AC_PATH_PROG(PARTED, [parted])
+if test -z "$PARTED"
+then
+  AC_MSG_ERROR([parted not found, please install parted])
+fi
+
+AC_ARG_VAR(BTRFS, [btrfs path])
+AC_PATH_PROG(BTRFS, [btrfs])
+if test -z "$BTRFS"
+then
+  AC_MSG_ERROR([btrfs not found, please install btrfs-progs])
+fi
+
+AC_ARG_VAR(MKFSXFS, [mkfs.xfs path])
+AC_PATH_PROG(MKFSXFS, [mkfs.xfs])
+if test -z "$MKFSXFS"
+then
+  AC_MSG_ERROR([mkfs.xfs not found, please install xfsprogs])
+fi
+
+AC_ARG_VAR(SFDISK, [sfdisk path])
+AC_PATH_PROG(SFDISK, [sfdisk])
+if test -z "$SFDISK"
+then
+  AC_MSG_ERROR([sfdisk not found, please install sfdisk])
+fi
+
+AC_ARG_VAR(KPARTX, [kpartx path])
+AC_PATH_PROG(KPARTX, [kpartx])
+if test -z "KPARTX"
+then
+  AC_MSG_ERROR([kpartx not found, please install multipath-tools])
+fi
+
+AC_ARG_VAR(PVCREATE, [pvcreate path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_PATH_PROG(PVCREATE, [pvcreate])
+if test -z "$PVCREATE"
+then
+  AC_MSG_ERROR([pvcreate not found, please install lvm2])
+fi
+
+AC_ARG_VAR(VGCREATE, [vgcreate path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_PATH_PROG(VGCREATE, [vgcreate])
+if test -z "$VGCREATE"
+then
+  AC_MSG_ERROR([vgcreate not found, please install lvm2])
+fi
+
+AC_ARG_VAR(VGREMOVE, [vgremove path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_PATH_PROG(VGREMOVE, [vgremove])
+if test -z "$VGREMOVE"
+then
+  AC_MSG_ERROR([vgremove not found, please install lvm2])
+fi
+
+AC_ARG_VAR(LVCREATE, [lvcreate path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_PATH_PROG(LVCREATE, [lvcreate])
+if test -z "$LVCREATE"
+then
+  AC_MSG_ERROR([lvcreate not found, please install lvm2])
+fi
+
+AC_ARG_VAR(LOSETUP, [losetup path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_PATH_PROG(LOSETUP, [losetup])
+if test -z "$LOSETUP"
+then
+  AC_MSG_ERROR([losetup not found, please install lvm2])
 fi
 
 AC_CONFIG_FILES([ Makefile ])

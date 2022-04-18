@@ -62,5 +62,23 @@ case "${OSP_REPO_URI}" in
 	;;
 esac
 
+case "${OSP_FILESYSTEM}" in
+  ""|xfs|ext2|ext3|ext4|btrfs)
+      ;;
+  *)
+    echo "Invalid value '$OSP_FILESYSTEM' for the filesystem parameter" 1>&2
+    exit 1;
+    ;;
+esac
+
+case "${OSP_LAYOUT}" in
+  ""|basic|standard)
+      ;;
+  *)
+    echo "Invalid value '$OSP_LAYOUT' for the layout parameter" 1>&2
+    exit 1;
+    ;;
+esac
+
 exit 0
 

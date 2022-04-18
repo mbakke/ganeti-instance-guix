@@ -1,6 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Copyright (C) 2017, 2018, 2019, 2020 Marius Bakke <marius@devup.no>
+# Copyright (C) 2022 David Larsson <david.larsson@selfhosted.xyz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,84 +16,372 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# cancel script on error
 set -e
+shopt -s globstar
 
 . ./common.sh
 
-if [ ! -d "$CACHE_DIR" ]; then
-    mkdir -p "$CACHE_DIR"
-fi
-if [ ! -d "$GCROOTSDIR" ]; then
-    mkdir -p "$GCROOTSDIR"
-fi
+# Check external program dependencies
+verify_dependencies(){
+    local dep
+    for dep in guix "$SFDISK" "$WIPEFS" "$JQ" "$PARTED" "$BTRFS" mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.xfs "$VGREMOVE"; do
+        command -v "$dep" &>/dev/null || {
+            echo Missing dependency "$dep" >&2
+            return 1
+	}
+    done
+}
 
-GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
+guix_setup(){
+    local GUIX=guix
 
-# Make Guix use the specified CACHE_DIR to store Guile and Git caches.
-export XDG_CACHE_HOME=$CACHE_DIR
-
-# Say 'cheeese'.
-$GUIX --version
-
-# The DISK_N_SIZE variable was added in Ganeti 3.0.
-if [ -n "$DISK_0_SIZE" ]; then
-    DEVICE_SIZE=$(($DISK_0_SIZE * 1024 * 1024))
-elif [ -b $TARGET_DEVICE ]; then
-    DEVICE_SIZE=$($BLOCKDEV --getsize64 $TARGET_DEVICE)
-else
-    # Not a real block device.  Assume file disk and just use 'du'.
-    DEVICE_SIZE=$(du --bytes $TARGET_DEVICE | cut -f1)
-fi
-
-# Prepare the time machine if relevant.
-if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
-    GUIX="$GUIX time-machine"
-    if [ -n "$OSP_REPO_URI" ]; then
-        GUIX="$GUIX --url=$OSP_REPO_URI"
+    # Prepare the time machine if relevant.
+    if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
+	GUIX="$GUIX time-machine"
+	if [ -n "$OSP_REPO_URI" ]; then
+            GUIX="$GUIX --url=$OSP_REPO_URI"
+	fi
+	if [ -n "$OSP_COMMIT" ]; then
+            GUIX="$GUIX --commit=$OSP_COMMIT"
+	fi
+	if [ -n "$OSP_BRANCH" ]; then
+            GUIX="$GUIX --branch=$OSP_BRANCH"
+	fi
+	if [ -n "$OSP_DISABLE_AUTHENTICATION" ]; then
+            GUIX="$GUIX --disable-authentication"
+	fi
+	log "Invoking time machine with the following parameters:"
+	log "    $(echo $GUIX | cut --complement -f1,2 -d' ')"
+	GUIX="$GUIX -- "
     fi
-    if [ -n "$OSP_COMMIT" ]; then
-        GUIX="$GUIX --commit=$OSP_COMMIT"
+
+    GUIX="$GUIX system"
+
+    if [ -n "$OSP_SYSTEM" ]; then
+	GUIX="$GUIX --system=$OSP_SYSTEM"
     fi
-    if [ -n "$OSP_BRANCH" ]; then
-        GUIX="$GUIX --branch=$OSP_BRANCH"
+    if [ -n "$OSP_TARGET" ]; then
+	GUIX="$GUIX --target=$OSP_TARGET"
     fi
-    if [ -n "$OSP_DISABLE_AUTHENTICATION" ]; then
-        GUIX="$GUIX --disable-authentication"
+    echo "$GUIX"
+}
+
+# $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
+partition_disk(){
+    local TARGET_DEVICE="$1"
+
+    echo Starting partitioning on "$TARGET_DEVICE" >&2
+
+    # If this is a reinstallation, the second partition may contain a
+    # mounted filesystem that needs unmounted to proceed.
+    if "$UMOUNT" -R "$TARGET_DEVICE"p2 2>/dev/null; then echo successfully unmounted "$TARGET_DEVICE"p2 ; fi
+
+    # Wipe any previous filesystems in case this is a reinstallation
+    echo Wiping any previous filesystems on "$TARGET_DEVICE" >&2
+
+    # the naming of the partitions may vary some, thus we allow
+    # failing to wipe the partitions
+    if "${VGREMOVE}" -y "$INSTANCE_NAME"_vg01 2>/dev/null; then echo successfully removed LVM Volume Group "$INSTANCE_NAME"_vg01 ; fi
+    if "${WIPEFS}" -a "$TARGET_DEVICE"p[1-9]* &>/dev/null; then echo successfully wiped "$TARGET_DEVICE"p[1-9]* ; fi
+    if "${WIPEFS}" -a "$TARGET_DEVICE"[1-9]* &>/dev/null; then echo successfully wiped "$TARGET_DEVICE"[1-9]* ; fi
+    if "${KPARTX}" -d "$TARGET_DEVICE" 2>/dev/null; then echo successfully deleted partition device mappings of "$TARGET_DEVICE"; fi
+
+    # It has happened that some VM has kernel panicked due to first
+    # sectors not being properly wiped, and writing some random stuff
+    # there has solved it:
+    head -c 3145728 /dev/urandom > "$TARGET_DEVICE"; sync
+
+    # Create bios_grub partition and offset so it's easy to use either
+    # of MBR or GPT or to switch between them.
+    # https://www.gnu.org/software/grub/manual/grub/html_node/BIOS-installation.html#BIOS-installation
+    echo Creating 2 partitions on "$TARGET_DEVICE" >&2
+    "${PARTED}" --script "$TARGET_DEVICE" \
+    mklabel gpt \
+    mkpart primary 1MiB 3MiB \
+    mkpart primary 3MiB 100% \
+    set 1 bios_grub on
+    [[ "$?" == 0 ]] || {
+        echo Failed to partition "$TARGET_DEVICE" >&2
+        return 1
+    }
+}
+
+# $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
+# find_partition_path returns the second partition's filepath
+find_partition_path(){
+    local TARGET_DEVICE="$1"
+    local -i num="$2"; num=$((num-1))
+    "${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[$num].node" || {
+        echo Failed to find partition filepath for partition "$2" for "$TARGET_DEVICE" >&2
+	return 1
+    }
+}
+
+# $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
+# find_uuid returns the second partition's uuid
+find_uuid(){
+    local TARGET_DEVICE="$1"
+    local -i num="$2"; num=$((num-1))
+    "${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[$num].uuid" || {
+        echo Failed to find partition filepath for partition "$2" for "$TARGET_DEVICE" >&2
+	return 1
+    }
+}
+
+# $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
+create_filesystems(){
+    local TARGET_DEVICE="$1"
+    local FS_TYPE="$2"
+    local LAYOUT="$3"
+    local SWAP_SPACE=4G
+
+    # Find the second partitions filepaths':
+    local TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
+
+    if [[ "$LAYOUT" == standard ]] && [[ "$FS_TYPE" == btrfs ]]; then
+	echo Creating btrfs filesystem on second partition of "$TARGET_DEVICE" >&2
+	mkfs.btrfs -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
+            echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
+	    return 1
+	}
+
+	# Mount and create root filesystem
+	local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
+	mount "$TARGET_DEV_PART2" "$TEMPDIR" || {
+            echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
+	    rmdir "$TEMPDIR"
+	    return 1
+	}
+	"${BTRFS}" subvolume create "$TEMPDIR"/system-root
+
+	# Setup the SWAP subvolume
+	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/swap
+
+	# Setup the SWAP-file
+	chmod 700 "$TEMPDIR"/system-root/swap
+	truncate -s 0 "$TEMPDIR"/system-root/swap/swapfile
+	"${CHATTR}" +C "$TEMPDIR"/system-root/swap/swapfile
+	"${BTRFS}" property set "$TEMPDIR"/system-root/swap/swapfile compression none
+	"${FALLOCATE}" -l "$SWAP_SPACE" "$TEMPDIR"/system-root/swap/swapfile
+	chmod 600 "$TEMPDIR"/system-root/swap/swapfile
+	"${MKSWAP}" -f "$TEMPDIR"/system-root/swap/swapfile
+
+	# Setup additional subvolumes
+	mkdir -p "$TEMPDIR"/system-root/gnu
+	mkdir -p "$TEMPDIR"/system-root/var
+	mkdir -p "$TEMPDIR"/system-root/var/lib
+	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/gnu/store
+	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/log
+	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/lib/mysql
+	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/home
+	umount "$TEMPDIR"
+	rmdir "$TEMPDIR"
+    elif [[ "$LAYOUT" == basic ]] && [[ "$FS_TYPE" == btrfs ]]; then
+	"${WIPEFS}" -a "$TARGET_DEV_PART2"
+	mkfs.btrfs -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
+            echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
+	    return 1
+	}
+    elif [[ "$LAYOUT" == basic ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" == xfs ]]); then
+	"${WIPEFS}" -a "$TARGET_DEV_PART2"
+	mkfs."$FS_TYPE" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2" || {
+            echo Failed to mkfs."$FS_TYPE" on "$TARGET_DEV_PART2" >&2
+	    return 1
+	}
+    elif [[ "$LAYOUT" == standard ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" =~ xfs ]]); then
+	"${PARTED}" --script "$TARGET_DEVICE" \
+	       set 2 lvm on
+	"${PVCREATE}" "$TARGET_DEV_PART2"
+	"${VGCREATE}" "$INSTANCE_NAME"_vg01 "$TARGET_DEV_PART2"
+	ROOT_SIZE='-l 10%VG'
+	HOME_SIZE='-l 10%VG'
+	GNU_STORE_SIZE='-l 55%VG'
+	VAR_LOG_SIZE='-l 10%VG'
+	VAR_LIB_MYSQL_SIZE='-l 10%VG'
+	SWAP_SIZE='-l 100%FREE'
+	"${LVCREATE}" --yes -n lv_root $ROOT_SIZE -W y "$INSTANCE_NAME"_vg01
+	"${LVCREATE}" --yes -n lv_home $HOME_SIZE -W y "$INSTANCE_NAME"_vg01
+	"${LVCREATE}" --yes -n lv_gnu_store $GNU_STORE_SIZE -W y "$INSTANCE_NAME"_vg01
+	"${LVCREATE}" --yes -n lv_var_log $VAR_LOG_SIZE -W y "$INSTANCE_NAME"_vg01
+	"${LVCREATE}" --yes -n lv_var_lib_mysql $VAR_LIB_MYSQL_SIZE -W y "$INSTANCE_NAME"_vg01
+	"${LVCREATE}" --yes -n lv_swap $SWAP_SIZE -W y "$INSTANCE_NAME"_vg01
+	# -f (force) is needed if reinstalling and previous
+	# logical-volume also was a swap volume and still has that
+	# signature, else mkswap command will wait for user
+	# confirmation
+	"${MKSWAP}" -f --label "$INSTANCE_NAME"-swap /dev/"$INSTANCE_NAME"_vg01/lv_swap
+	echo Creating "$FS_TYPE" filesystems on logical volumes of "$INSTANCE_NAME"_vg01 of "$TARGET_DEV_PART2" >&2
+	for lv in lv_root lv_home lv_gnu_store lv_var_log lv_var_lib_mysql; do
+	    mkfs."$FS_TYPE" "/dev/${INSTANCE_NAME}_vg01/${lv}" || {
+		echo Failed to mkfs."$FS_TYPE" on /dev/"${INSTANCE_NAME}_vg01/$lv" >&2
+		return 1
+	    }
+	done
+    else
+	echo "Unsupported filesystem type and/or layout combination: FS_TYPE: $FS_TYPE LAYOUT: $LAYOUT"
+	return 1
     fi
-    log "Invoking time machine with the following parameters:"
-    log "    $(echo $GUIX | cut --complement -f1,2 -d' ')"
-    GUIX="$GUIX -- "
-fi
+}
 
-GUIX="$GUIX system"
+prep_init_mount_point(){
+    local TARGET_DEVICE="$1"
+    local GUIX_CONFIG="$2"
+    local FS_TYPE="$3"
+    local LAYOUT="$4"
+    local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
+    echo Initializing guix on second partition of "$TARGET_DEVICE" using config "$GUIX_CONFIG" >&2
 
-if [ -n "$OSP_SYSTEM" ]; then
-    GUIX="$GUIX --system=$OSP_SYSTEM"
-fi
-if [ -n "$OSP_TARGET" ]; then
-    GUIX="$GUIX --target=$OSP_TARGET"
-fi
+    # Assume there's a partition 1 for boot and find the second
+    # partition's filepath. If FS_TYPE is btrfs we can just mount it,
+    # else we assume second partition is an LVM partition and we must
+    # mount logical volumes instead:
+    local TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
+    if [[ "$FS_TYPE" == "btrfs" ]]; then
+	mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
+            echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
+	    rmdir "$TEMPDIR"
+	    return 1
+	}
+	# Assume that if <mountpoint>/system-root exists, it is the root filesystem
+	# mount-point for guix
+	if [[ -d "$TEMPDIR"/system-root ]]; then
+	    TARGET_ROOT="$TEMPDIR"/system-root
+	else
+	    TARGET_ROOT="$TEMPDIR"
+	fi
+    else
+	# The standard layout for non-btrfs filesystems is setup with LVM
+	if [[ "$LAYOUT" == standard ]]; then
+	    echo Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 of "$TARGET_DEV_PART2" >&2
+	    TARGET_ROOT="$TEMPDIR"
+	    for lv in lv_root lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib_mysql; do
+		lv="${lv#lv_}"
+		lv="${lv%root}"
+		mkdir -p "$TEMPDIR"/"${lv//_/\/}" >&2
+		if [[ ! "$lv" == swap ]]; then
+		    echo running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2
+		    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2 || {
+			echo Failed to mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" on "$TEMPDIR"/"${lv//_/\/}" >&2
+			return 1
+		    }
+		fi
+	    done
+	elif [[ "$LAYOUT" == basic ]]; then
+	    mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
+		echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
+		rmdir "$TEMPDIR"
+		return 1
+	    }
+	    TARGET_ROOT="$TEMPDIR"
+	fi
+    fi
 
-log "Invoking $GUIX build $VARIANT_CONFIG..."
-[[ -L "$GC_ROOT" ]] && rm -f "$GC_ROOT"
-$GUIX build --fallback --no-grafts -r "$GC_ROOT" "$VARIANT_CONFIG"
+    # Create /etc/config.env on target with relevant environment
+    # variables, assuming that the value of the variables are
+    # correctly set, we therefore skip the quote for ease of parsing
+    # them back to our guix config.scm files.
+    TARGET_ETC="$TARGET_ROOT"/etc
+    mkdir -p "$TARGET_ETC" >&2
+    printf '%s\n' INSTANCE_NAME="$INSTANCE_NAME" > "$TARGET_ETC"/config.env
+    printf '%s\n' NIC_0_NETWORK_SUBNET="$NIC_0_NETWORK_SUBNET" >> "$TARGET_ETC"/config.env
+    printf '%s\n' NIC_0_NETWORK_GATEWAY="$NIC_0_NETWORK_GATEWAY" >> "$TARGET_ETC"/config.env
+    printf '%s\n' NIC_0_IP="$NIC_0_IP" >> "$TARGET_ETC"/config.env
+    printf '%s\n' FS_TYPE="$FS_TYPE" >> "$TARGET_ETC"/config.env
+    guix describe --format=json | "${JQ}" -r '"GUIX_COMMIT=" + .[].commit' >> "$TARGET_ETC"/config.env
+    cat "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"/examples/config-base.scm > "$TARGET_ETC"/config-base.scm
+    printf "$TARGET_ROOT"
+}
+# guix system init on a target device's second partition
+initialize_guix(){
+    local GUIX_CONFIG="$1"
+    local TARGET_ROOT="$2"
+    export TARGET_DEVICE="$3"
+    export FS_TYPE="$4"
+    local GUIX="$5"
 
-log "Creating disk image..."
-# Guix creates images with extra space based on an ESP partition and root file system offset
-# so we must remove this amount of bytes from the DEVICE_SIZE.
-# See lines 96, 103 and 647 here: https://github.com/guix-mirror/guix/blob/master/gnu/system/image.scm#96
-DEVICE_SIZE=$(( DEVICE_SIZE - $(( $(( 2**20 * 40)) + $(( 512*2048)) )) ))
-DISK_IMAGE=$($GUIX image --no-offload --image-size=$DEVICE_SIZE "$VARIANT_CONFIG")
-DISK_IMAGE_SIZE=$(du -k $DISK_IMAGE | cut -f1)
+    # Install GuixSD
+    $GUIX init "$GUIX_CONFIG" "$TARGET_ROOT" || {
+        echo Failed to guix system init "$GUIX_CONFIG" "$TARGET_ROOT" >&2
+	umount "$TEMPDIR"
+	rmdir "$TEMPDIR"
+	return 1
+    }
+    if umount -R "${TARGET_ROOT}" 2>/dev/null; then echo Recursively unmounted "$TARGET_ROOT"; fi
+    if umount -R "${TARGET_ROOT%/system-root}" 2>/dev/null; then echo Recursively unmounted "${TARGET_ROOT%/system-root}"; fi
 
-log "Copying $DISK_IMAGE ($((${DISK_IMAGE_SIZE} / 1024)) MiB) to $TARGET_DEVICE..."
-start_time=$(date +%s)
-if [ -b $TARGET_DEVICE ]; then
-    $QEMU_IMG dd bs=4M -O raw if="$DISK_IMAGE" of="$TARGET_DEVICE"
-else
-    $QEMU_IMG convert -O raw "$DISK_IMAGE" "$TARGET_DEVICE"
-fi
-elapsed=$(($(date +%s) - $start_time))
-log "Copied $DISK_IMAGE_SIZE KiB in $elapsed seconds)."
+    rmdir "${TARGET_ROOT%/system-root}"
+    "${KPARTX}" -d "$TARGET_DEVICE"
+}
 
-exit 0
+main(){
+    # Check that external programs like wipefs, lvcreate etc. are
+    # available.
+    verify_dependencies
+
+    # for testing, run (replace value of TARGET_DEVICE etc. as needed):
+    # INSTANCE_NAME=testinstance \
+    # NIC_0_IP=1.2.3.4 \
+    # NIC_0_NETWORK_SUBNET=1.2.3.4/24 \
+    # NIC_0_NETWORK_GATEWAY=1.2.3.1 \
+    # TARGET_DEVICE=/dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0 \
+    # OSP_LAYOUT=standard OSP_FILESYSTEM=xfs \
+    # OSP_VARIANT_CONFIG=$(pwd)/examples/dynamic-lvm.scm \
+    # ./create
+    local DEFAULT_VARIANT_CONFIG="$(dirname $(readlink -f "${BASH_SOURCE[0]}"))/examples/dynamic.scm"
+    local VARIANT_CONFIG="${VARIANT_CONFIG:-$DEFAULT_VARIANT_CONFIG}"
+    echo Running with options set to:
+    echo TARGET_DEVICE: "${TARGET_DEVICE}"
+    echo OSP_FILESYSTEM: "${OSP_FILESYSTEM:-ext4}"
+    echo OSP_LAYOUT: "${OSP_LAYOUT:-basic}"
+    echo VARIANT_CONFIG: "${VARIANT_CONFIG}"
+
+    # Make Guix use the specified CACHE_DIR to store Guile and Git caches.
+    if [[ -n "$CACHE_DIR" ]] && [[ ! -d "$CACHE_DIR" ]]; then
+	mkdir -p "$CACHE_DIR"
+    fi
+    if [[ -n "$GCROOTSDIR" ]] && [[ ! -d "$GCROOTSDIR" ]]; then
+	mkdir -p "$GCROOTSDIR"
+    fi
+
+    if [[ -n "$GCROOTSDIR" ]]; then
+	local GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
+    fi
+    if [[ -n "$CACHE_DIR" ]]; then
+	export XDG_CACHE_HOME="$CACHE_DIR"
+    fi
+
+    # Check if TARGET_DEVICE is a real block device, and losetup it if
+    # it isn't (for example when using a file disk):
+    if [[ ! -b "$TARGET_DEVICE" ]]; then
+	local TARGET_DEVICE_ORIG="$TARGET_DEVICE"
+	if ! TARGET_DEVICE=$("${LOSETUP}" --show -f "$TARGET_DEVICE"); then
+	    echo Failed to "${LOSETUP}" "$TARGET_DEVICE_ORIG" >&2
+	    return 1
+	fi
+    fi
+
+    # Check OS parameters and set an appropriate $GUIX command that
+    # will use guix time-machine if needed.
+    local GUIX_COMMAND=$(guix_setup)
+    echo GUIX_COMMAND is: "$GUIX_COMMAND"
+
+    # Say 'cheeese'.
+    $GUIX_COMMAND --version
+
+    # A basic 2 partitions setup.
+    partition_disk "$TARGET_DEVICE"
+
+    # Each filesystem and layout option combination is handled in the
+    # create_filesystems function. This will possibly setup lvm based
+    # on the OSP options.
+    create_filesystems "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
+
+    # Prep the mount point to initialize guix on and then initialize guix.
+    local MOUNT_POINT=$(prep_init_mount_point "$TARGET_DEVICE" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}")
+    initialize_guix "$VARIANT_CONFIG" "$MOUNT_POINT" "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "$GUIX_COMMAND"
+
+    # Undo the losetup if needed.
+    if [[ ! -b "$TARGET_DEVICE_ORIG" ]]; then "${LOSETUP}" -d "$TARGET_DEVICE"; fi
+}
+[[ "$1" == '--source-only' ]] || main "$@"
