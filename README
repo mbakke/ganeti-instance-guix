@@ -37,13 +37,15 @@ Dependencies:
 
 * Guix
 * util-linux
-* xfsprogs
-* btrfs-progs
-* lvm2
 * multipath-tools
 * jq
 * e2fsprogs
 * parted
+
+These are optional:
+* xfsprogs
+* btrfs-progs
+* lvm2
 
 Limitations:
 
