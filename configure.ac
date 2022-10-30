@@ -126,7 +126,7 @@ fi
 
 AC_ARG_VAR(KPARTX, [kpartx path])
 AC_PATH_PROG(KPARTX, [kpartx])
-if test -z "KPARTX"
+if test -z "$KPARTX"
 then
   AC_MSG_ERROR([kpartx not found, please install multipath-tools])
 fi
