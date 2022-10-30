@@ -35,6 +35,11 @@ do_subst = sed \
 	-e 's,[@]JQ[@],$(JQ),g' \
 	-e 's,[@]PARTED[@],$(PARTED),g' \
 	-e 's,[@]BTRFS[@],$(BTRFS),g' \
+	-e 's,[@]MKFS_BTRFS[@],$(MKFS_BTRFS),g' \
+	-e 's,[@]MKFS_XFS[@],$(MKFS_XFS),g' \
+	-e 's,[@]MKFS_EXT2[@],$(MKFS_EXT2),g' \
+	-e 's,[@]MKFS_EXT3[@],$(MKFS_EXT3),g' \
+	-e 's,[@]MKFS_EXT4[@],$(MKFS_EXT4),g' \
 	-e 's,[@]SFDISK[@],$(SFDISK),g' \
 	-e 's,[@]KPARTX[@],$(KPARTX),g' \
 	-e 's,[@]PVCREATE[@],$(PVCREATE),g' \

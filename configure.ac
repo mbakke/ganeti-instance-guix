@@ -111,19 +111,11 @@ then
   AC_MSG_ERROR([parted not found, please install parted])
 fi
 
-AC_ARG_VAR(BTRFS, [btrfs path])
-AC_PATH_PROG(BTRFS, [btrfs])
-if test -z "$BTRFS"
-then
-  AC_MSG_ERROR([btrfs not found, please install btrfs-progs])
-fi
-
-AC_ARG_VAR(MKFSXFS, [mkfs.xfs path])
-AC_PATH_PROG(MKFSXFS, [mkfs.xfs])
-if test -z "$MKFSXFS"
-then
-  AC_MSG_ERROR([mkfs.xfs not found, please install xfsprogs])
-fi
+AC_PATH_PROG(MKFS_BTRFS, [mkfs.btrfs], mkfs.btrfs)
+AC_PATH_PROG(MKFS_XFS, [mkfs.xfs], mkfs.xfs)
+AC_PATH_PROG(MKFS_EXT2, [mkfs.ext2], mkfs.ext2)
+AC_PATH_PROG(MKFS_EXT3, [mkfs.ext3], mkfs.ext3)
+AC_PATH_PROG(MKFS_EXT4, [mkfs.ext4], mkfs.ext4)
 
 AC_ARG_VAR(SFDISK, [sfdisk path])
 AC_PATH_PROG(SFDISK, [sfdisk])
