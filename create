@@ -343,27 +343,27 @@ main(){
 
     # Make Guix use the specified CACHE_DIR to store Guile and Git caches.
     if [[ -n "$CACHE_DIR" ]] && [[ ! -d "$CACHE_DIR" ]]; then
-	mkdir -p "$CACHE_DIR"
+        mkdir -p "$CACHE_DIR"
     fi
     if [[ -n "$GCROOTSDIR" ]] && [[ ! -d "$GCROOTSDIR" ]]; then
-	mkdir -p "$GCROOTSDIR"
+        mkdir -p "$GCROOTSDIR"
     fi
 
     if [[ -n "$GCROOTSDIR" ]]; then
-	local GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
+        local GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
     fi
     if [[ -n "$CACHE_DIR" ]]; then
-	export XDG_CACHE_HOME="$CACHE_DIR"
+        export XDG_CACHE_HOME="$CACHE_DIR"
     fi
 
     # Check if TARGET_DEVICE is a real block device, and losetup it if
     # it isn't (for example when using a file disk):
     if [[ ! -b "$TARGET_DEVICE" ]]; then
-	local TARGET_DEVICE_ORIG="$TARGET_DEVICE"
-	if ! TARGET_DEVICE=$("${LOSETUP}" --show -f "$TARGET_DEVICE"); then
-	    echo Failed to "${LOSETUP}" "$TARGET_DEVICE_ORIG" >&2
-	    return 1
-	fi
+        local TARGET_DEVICE_ORIG="$TARGET_DEVICE"
+        if ! TARGET_DEVICE=$("${LOSETUP}" --show -f "$TARGET_DEVICE"); then
+            echo Failed to "${LOSETUP}" "$TARGET_DEVICE_ORIG" >&2
+            return 1
+        fi
         CLEANUP+=("${LOSETUP} -d $TARGET_DEVICE")
     fi
 
