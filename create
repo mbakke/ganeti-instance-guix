@@ -75,17 +75,27 @@ partition_disk(){
 
     # If this is a reinstallation, the second partition may contain a
     # mounted filesystem that needs unmounted to proceed.
-    if "$UMOUNT" -R "$TARGET_DEVICE"p2 2>/dev/null; then echo successfully unmounted "$TARGET_DEVICE"p2 ; fi
+    if "$UMOUNT" -R "$TARGET_DEVICE"p2 2>/dev/null; then
+        echo successfully unmounted "$TARGET_DEVICE"p2
+    fi
 
     # Wipe any previous filesystems in case this is a reinstallation
     echo Wiping any previous filesystems on "$TARGET_DEVICE" >&2
 
     # the naming of the partitions may vary some, thus we allow
     # failing to wipe the partitions
-    if "${VGREMOVE}" -y "$INSTANCE_NAME"_vg01 2>/dev/null; then echo successfully removed LVM Volume Group "$INSTANCE_NAME"_vg01 ; fi
-    if "${WIPEFS}" -a "$TARGET_DEVICE"p[1-9]* &>/dev/null; then echo successfully wiped "$TARGET_DEVICE"p[1-9]* ; fi
-    if "${WIPEFS}" -a "$TARGET_DEVICE"[1-9]* &>/dev/null; then echo successfully wiped "$TARGET_DEVICE"[1-9]* ; fi
-    if "${KPARTX}" -d "$TARGET_DEVICE" 2>/dev/null; then echo successfully deleted partition device mappings of "$TARGET_DEVICE"; fi
+    if "${VGREMOVE}" -y "$INSTANCE_NAME"_vg01 2>/dev/null; then
+        echo successfully removed LVM Volume Group "$INSTANCE_NAME"_vg01
+    fi
+    if "${WIPEFS}" -a "$TARGET_DEVICE"p[1-9]* &>/dev/null; then
+        echo successfully wiped "$TARGET_DEVICE"p[1-9]*
+    fi
+    if "${WIPEFS}" -a "$TARGET_DEVICE"[1-9]* &>/dev/null; then
+        echo successfully wiped "$TARGET_DEVICE"[1-9]*
+    fi
+    if "${KPARTX}" -d "$TARGET_DEVICE" 2>/dev/null; then
+        echo successfully deleted partition device mappings of "$TARGET_DEVICE"
+    fi
 
     # It has happened that some VM has kernel panicked due to first
     # sectors not being properly wiped, and writing some random stuff
