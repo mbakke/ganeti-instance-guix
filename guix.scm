@@ -1,4 +1,4 @@
-;;; Copyright © 2017, 2019, 2020 Marius Bakke <marius@devup.no>
+;;; Copyright © 2017, 2019, 2020, 2022 Marius Bakke <marius@gnu.org>
 ;;;
 ;;; This program is free software: you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -22,8 +22,10 @@
              ((guix licenses) #:select (gpl3+))
              (guix packages)
              (gnu packages autotools)
+             (gnu packages disk)
              (gnu packages linux)
-             (gnu packages virtualization))
+             (gnu packages virtualization)
+             (gnu packages web))
 
 (define %source-dir (dirname (current-filename)))
 
@@ -49,11 +51,15 @@
                        #:select? (git-predicate %source-dir)))
    (build-system gnu-build-system)
    (native-inputs
-    `(("autoconf" ,autoconf)
-      ("automake" ,automake)))
+    (list autoconf automake))
    (inputs
-    `(("util-linux" ,util-linux)
-      ("qemu" ,qemu-minimal)))
+    (list e2fsprogs
+          jq
+          lvm2
+          multipath-tools
+          parted
+          util-linux
+          qemu-minimal))
    (home-page "https://github.com/mbakke/ganeti-instance-guix")
    (synopsis "Create Guix instances on Ganeti")
    (description
