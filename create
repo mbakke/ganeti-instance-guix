@@ -343,7 +343,7 @@ main(){
     # OSP_LAYOUT=standard OSP_FILESYSTEM=xfs \
     # OSP_VARIANT_CONFIG=$(pwd)/examples/dynamic-lvm.scm \
     # ./create
-    local DEFAULT_VARIANT_CONFIG="$(dirname $(readlink -f "${BASH_SOURCE[0]}"))/examples/dynamic.scm"
+    local DEFAULT_VARIANT_CONFIG="${EXAMPLEDIR}/dynamic.scm"
     local VARIANT_CONFIG="${VARIANT_CONFIG:-$DEFAULT_VARIANT_CONFIG}"
     echo Running with options set to:
     echo TARGET_DEVICE: "${TARGET_DEVICE}"

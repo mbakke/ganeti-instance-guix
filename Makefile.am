@@ -11,8 +11,8 @@ dist_doc_DATA = COPYING NEWS README
 exampledir = $(docdir)/examples
 
 dist_example_DATA = \
-	examples/dynamic.scm \
 	examples/config-base.scm \
+	examples/dynamic.scm \
 	examples/dynamic-lvm.scm \
 	examples/dynamic-btrfs.scm \
 	examples/generic.scm
@@ -20,7 +20,8 @@ dist_example_DATA = \
 EXTRA_DIST = \
 	common.sh.in
 
-do_subst = sed \
+do_subst = $(SED) \
+	-e 's,[@]EXAMPLEDIR[@],$(exampledir),g' \
 	-e 's,[@]localstatedir[@],$(localstatedir),g' \
 	-e 's,[@]BLOCKDEV[@],$(BLOCKDEV),g' \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
@@ -49,6 +50,9 @@ do_subst = sed \
 	-e 's,[@]LOSETUP[@],$(LOSETUP),g'
 
 common.sh: common.sh.in Makefile
+	$(do_subst) < $< > $@
+
+examples/%.scm: examples/%.scm.in Makefile
 	$(do_subst) < $< > $@
 
 # End users should place variants.list in $variantsdir.

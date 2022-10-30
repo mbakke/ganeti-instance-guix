@@ -33,10 +33,10 @@ cleanup() {
 
 trap cleanup EXIT
 
-BLOCKDEV=@BLOCKDEV@
 GUIX=@GUIX@
 
 # external programs
+BLOCKDEV=@BLOCKDEV@
 MOUNT=@MOUNT@
 UMOUNT=@UMOUNT@
 WIPEFS=@WIPEFS@
@@ -62,6 +62,7 @@ MKFS_EXT4=@MKFS_EXT4@
 CACHE_DIR="@localstatedir@/cache/ganeti-instance-guix"
 GCROOTSDIR=@GCROOTSDIR@
 VARIANTS_DIR=@VARIANTSDIR@
+EXAMPLEDIR=@EXAMPLEDIR@
 
 if [ -n "$OS_VARIANT" ]; then
     if [ ! -d "$VARIANTS_DIR" ]; then

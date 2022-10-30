@@ -1,5 +1,6 @@
 (use-modules (gnu)) ;; needed for "device" below
-(load (string-append (dirname (current-filename)) "/config-base.scm"))
+(load "@EXAMPLEDIR@/config-base.scm")
+
 (operating-system
  (inherit default-os)
  (mapped-devices (let ((myvg (string-append (getenv "INSTANCE_NAME") "_vg01")))

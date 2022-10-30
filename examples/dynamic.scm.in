@@ -1,0 +1,2 @@
+(load "@EXAMPLEDIR@/config-base.scm")
+default-os

@@ -46,6 +46,7 @@ AC_SUBST(GCROOTSDIR, $gcrootsdir)
 AC_PROG_INSTALL
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
+AC_PROG_SED
 
 # Check for the required programs
 AC_ARG_VAR(BLOCKDEV, [blockdev path]) # util-linux also installs wipefs, umount etc. thats also needed.

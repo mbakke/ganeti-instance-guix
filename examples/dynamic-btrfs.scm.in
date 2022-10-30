@@ -1,5 +1,6 @@
 (use-modules (gnu)) ;; needed for "device" below
-(load (string-append (dirname (current-filename)) "/config-base.scm"))
+(load "@EXAMPLEDIR@/config-base.scm")
+
 (operating-system
  (inherit default-os)
  (file-systems
