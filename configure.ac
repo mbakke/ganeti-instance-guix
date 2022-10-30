@@ -90,6 +90,20 @@ then
   AC_MSG_ERROR([mkswap not found, please install util-linux])
 fi
 
+AC_ARG_VAR(LOSETUP, [losetup path])
+AC_PATH_PROG(LOSETUP, [losetup])
+if test -z "$LOSETUP"
+then
+  AC_MSG_ERROR([losetup not found])
+fi
+
+AC_ARG_VAR(SFDISK, [sfdisk path])
+AC_PATH_PROG(SFDISK, [sfdisk])
+if test -z "$SFDISK"
+then
+  AC_MSG_ERROR([sfdisk not found])
+fi
+
 AC_ARG_VAR(CHATTR, [chattr path]) # e2fsprogs also covers mkfs.ext{2,3,4}
 AC_PATH_PROG(CHATTR, [chattr])
 if test -z "$CHATTR"
@@ -116,13 +130,6 @@ AC_PATH_PROG(MKFS_XFS, [mkfs.xfs], mkfs.xfs)
 AC_PATH_PROG(MKFS_EXT2, [mkfs.ext2], mkfs.ext2)
 AC_PATH_PROG(MKFS_EXT3, [mkfs.ext3], mkfs.ext3)
 AC_PATH_PROG(MKFS_EXT4, [mkfs.ext4], mkfs.ext4)
-
-AC_ARG_VAR(SFDISK, [sfdisk path])
-AC_PATH_PROG(SFDISK, [sfdisk])
-if test -z "$SFDISK"
-then
-  AC_MSG_ERROR([sfdisk not found, please install sfdisk])
-fi
 
 AC_ARG_VAR(KPARTX, [kpartx path])
 AC_PATH_PROG(KPARTX, [kpartx])
@@ -157,13 +164,6 @@ AC_PATH_PROG(LVCREATE, [lvcreate])
 if test -z "$LVCREATE"
 then
   AC_MSG_ERROR([lvcreate not found, please install lvm2])
-fi
-
-AC_ARG_VAR(LOSETUP, [losetup path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
-AC_PATH_PROG(LOSETUP, [losetup])
-if test -z "$LOSETUP"
-then
-  AC_MSG_ERROR([losetup not found, please install lvm2])
 fi
 
 AC_CONFIG_FILES([ Makefile ])
