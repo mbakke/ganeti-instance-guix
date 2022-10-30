@@ -1,6 +1,6 @@
 #
 
-# Copyright (C) 2017, 2019, 2020 Marius Bakke <marius@devup.no>
+# Copyright (C) 2017, 2019, 2020, 2022 Marius Bakke <marius@gnu.org>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+CLEANUP=( )
+
 log() {
     echo "$@" >&2
 }
+
+cleanup() {
+  if [[ ${#CLEANUP[*]} -gt 0 ]]; then
+    LAST_ELEMENT=$((${#CLEANUP[*]}-1))
+    REVERSE_INDEXES=$(seq ${LAST_ELEMENT} -1 0)
+    for i in $REVERSE_INDEXES; do
+      ${CLEANUP[$i]}
+    done
+  fi
+}
+
+trap cleanup EXIT
 
 BLOCKDEV=@BLOCKDEV@
 GUIX=@GUIX@

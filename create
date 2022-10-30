@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (C) 2017, 2018, 2019, 2020 Marius Bakke <marius@devup.no>
+# Copyright (C) 2017, 2018, 2019, 2020, 2022 Marius Bakke <marius@gnu.org>
 # Copyright (C) 2022 David Larsson <david.larsson@selfhosted.xyz>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -151,11 +151,12 @@ create_filesystems(){
 
 	# Mount and create root filesystem
 	local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
+	CLEANUP+=("rmdir $TEMPDIR")
 	mount "$TARGET_DEV_PART2" "$TEMPDIR" || {
             echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
-	    rmdir "$TEMPDIR"
 	    return 1
 	}
+	CLEANUP+=("umount $TEMPDIR")
 	"${BTRFS}" subvolume create "$TEMPDIR"/system-root
 
 	# Setup the SWAP subvolume
@@ -178,8 +179,6 @@ create_filesystems(){
 	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/log
 	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/lib/mysql
 	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/home
-	umount "$TEMPDIR"
-	rmdir "$TEMPDIR"
     elif [[ "$LAYOUT" == basic ]] && [[ "$FS_TYPE" == btrfs ]]; then
 	"${WIPEFS}" -a "$TARGET_DEV_PART2"
 	"${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
@@ -233,6 +232,7 @@ prep_init_mount_point(){
     local FS_TYPE="$3"
     local LAYOUT="$4"
     local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
+    CLEANUP+=("rmdir $TEMPDIR")
     echo Initializing guix on second partition of "$TARGET_DEVICE" using config "$GUIX_CONFIG" >&2
 
     # Assume there's a partition 1 for boot and find the second
@@ -243,9 +243,9 @@ prep_init_mount_point(){
     if [[ "$FS_TYPE" == "btrfs" ]]; then
 	mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
             echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
-	    rmdir "$TEMPDIR"
 	    return 1
 	}
+        CLEANUP+=("umount $TEMPDIR")
 	# Assume that if <mountpoint>/system-root exists, it is the root filesystem
 	# mount-point for guix
 	if [[ -d "$TEMPDIR"/system-root ]]; then
@@ -268,14 +268,15 @@ prep_init_mount_point(){
 			echo Failed to mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" on "$TEMPDIR"/"${lv//_/\/}" >&2
 			return 1
 		    }
+                    CLEANUP+=("umount $TEMPDIR/${lv//_/\/}")
 		fi
 	    done
 	elif [[ "$LAYOUT" == basic ]]; then
 	    mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
 		echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
-		rmdir "$TEMPDIR"
 		return 1
 	    }
+            CLEANUP+=("umount $TEMPDIR")
 	    TARGET_ROOT="$TEMPDIR"
 	fi
     fi
@@ -306,15 +307,16 @@ initialize_guix(){
     # Install GuixSD
     $GUIX init "$GUIX_CONFIG" "$TARGET_ROOT" || {
         echo Failed to guix system init "$GUIX_CONFIG" "$TARGET_ROOT" >&2
-	umount "$TEMPDIR"
-	rmdir "$TEMPDIR"
 	return 1
     }
-    if umount -R "${TARGET_ROOT}" 2>/dev/null; then echo Recursively unmounted "$TARGET_ROOT"; fi
-    if umount -R "${TARGET_ROOT%/system-root}" 2>/dev/null; then echo Recursively unmounted "${TARGET_ROOT%/system-root}"; fi
-
-    rmdir "${TARGET_ROOT%/system-root}"
-    "${KPARTX}" -d "$TARGET_DEVICE"
+    if umount -R "${TARGET_ROOT}" 2>/dev/null; then
+        echo Recursively unmounted "$TARGET_ROOT"
+    fi
+    if umount -R "${TARGET_ROOT%/system-root}" 2>/dev/null; then
+        echo Recursively unmounted "${TARGET_ROOT%/system-root}"
+    fi
+    CLEANUP+=("rmdir ${TARGET_ROOT%/system-root}")
+    CLEANUP+=("${KPARTX} -d $TARGET_DEVICE")
 }
 
 main(){
@@ -362,6 +364,7 @@ main(){
 	    echo Failed to "${LOSETUP}" "$TARGET_DEVICE_ORIG" >&2
 	    return 1
 	fi
+        CLEANUP+=("${LOSETUP} -d $TARGET_DEVICE")
     fi
 
     # Check OS parameters and set an appropriate $GUIX command that
@@ -383,8 +386,12 @@ main(){
     # Prep the mount point to initialize guix on and then initialize guix.
     local MOUNT_POINT=$(prep_init_mount_point "$TARGET_DEVICE" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}")
     initialize_guix "$VARIANT_CONFIG" "$MOUNT_POINT" "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "$GUIX_COMMAND"
-
-    # Undo the losetup if needed.
-    if [[ ! -b "$TARGET_DEVICE_ORIG" ]]; then "${LOSETUP}" -d "$TARGET_DEVICE"; fi
 }
+
 [[ "$1" == '--source-only' ]] || main "$@"
+
+# Execute cleanups.
+cleanup
+trap - EXIT
+
+exit 0
