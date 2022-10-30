@@ -138,33 +138,17 @@ then
   AC_MSG_ERROR([kpartx not found, please install multipath-tools])
 fi
 
-AC_ARG_VAR(PVCREATE, [pvcreate path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
-AC_PATH_PROG(PVCREATE, [pvcreate])
-if test -z "$PVCREATE"
-then
-  AC_MSG_ERROR([pvcreate not found, please install lvm2])
-fi
+AC_ARG_VAR(PVCREATE, [pvcreate path])
+AC_PATH_PROG(PVCREATE, [pvcreate], pvcreate)
 
-AC_ARG_VAR(VGCREATE, [vgcreate path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
-AC_PATH_PROG(VGCREATE, [vgcreate])
-if test -z "$VGCREATE"
-then
-  AC_MSG_ERROR([vgcreate not found, please install lvm2])
-fi
+AC_ARG_VAR(VGCREATE, [vgcreate path])
+AC_PATH_PROG(VGCREATE, [vgcreate], vgcreate)
 
-AC_ARG_VAR(VGREMOVE, [vgremove path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
-AC_PATH_PROG(VGREMOVE, [vgremove])
-if test -z "$VGREMOVE"
-then
-  AC_MSG_ERROR([vgremove not found, please install lvm2])
-fi
+AC_ARG_VAR(VGREMOVE, [vgremove path])
+AC_PATH_PROG(VGREMOVE, [vgremove], vgremove)
 
-AC_ARG_VAR(LVCREATE, [lvcreate path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
-AC_PATH_PROG(LVCREATE, [lvcreate])
-if test -z "$LVCREATE"
-then
-  AC_MSG_ERROR([lvcreate not found, please install lvm2])
-fi
+AC_ARG_VAR(LVCREATE, [lvcreate path])
+AC_PATH_PROG(LVCREATE, [lvcreate], lvcreate)
 
 AC_CONFIG_FILES([ Makefile ])
 
