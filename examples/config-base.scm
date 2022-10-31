@@ -97,13 +97,6 @@
                         (if root-authorizations
                             `(("root" ,(local-file root-authorizations)))
                             '()))))
-             ;; https://lists.gnu.org/archive/html/help-guix/2017-08/msg00095.html
-             (simple-service 'store-my-config
-                             etc-service-type
-                             `(("config.scm"
-				,(local-file (assoc-ref
-                                              (current-source-location)
-                                              'filename)))))
              (modify-services %base-services
 			      (sysctl-service-type config =>
                                                    (sysctl-configuration
