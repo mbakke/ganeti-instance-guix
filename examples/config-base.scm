@@ -59,7 +59,7 @@
    (users %base-user-accounts)
 
    ;; Globally-installed packages.
-   (packages (cons* lvm2 screen nss-certs le-certs btrfs-progs xfsprogs %base-packages))
+   (packages (cons* lvm2 screen nss-certs btrfs-progs xfsprogs %base-packages))
 
    ;; Add services to the baseline
    (services
