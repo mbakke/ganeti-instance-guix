@@ -36,7 +36,6 @@ trap cleanup EXIT
 GUIX=@GUIX@
 
 # external programs
-BLOCKDEV=@BLOCKDEV@
 MOUNT=@MOUNT@
 UMOUNT=@UMOUNT@
 FALLOCATE=@FALLOCATE@

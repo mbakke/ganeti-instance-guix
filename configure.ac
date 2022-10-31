@@ -49,13 +49,6 @@ AC_PROG_LN_S
 AC_PROG_SED
 
 # Check for the required programs
-AC_ARG_VAR(BLOCKDEV, [blockdev path]) # util-linux also installs wipefs, umount etc. thats also needed.
-AC_PATH_PROG(BLOCKDEV, [blockdev])
-if test -z "$BLOCKDEV"
-then
-  AC_MSG_ERROR([blockdev not found, please install util-linux])
-fi
-
 AC_ARG_VAR(MOUNT, [mount path])
 AC_PATH_PROG(MOUNT, [mount])
 if test -z "$MOUNT"

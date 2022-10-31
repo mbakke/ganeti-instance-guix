@@ -23,7 +23,6 @@ EXTRA_DIST = \
 do_subst = $(SED) \
 	-e 's,[@]EXAMPLEDIR[@],$(exampledir),g' \
 	-e 's,[@]localstatedir[@],$(localstatedir),g' \
-	-e 's,[@]BLOCKDEV[@],$(BLOCKDEV),g' \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
 	-e 's,[@]GCROOTSDIR[@],$(GCROOTSDIR),g' \
 	-e 's,[@]VARIANTSDIR[@],$(VARIANTSDIR),g' \
