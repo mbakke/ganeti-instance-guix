@@ -22,17 +22,6 @@ shopt -s globstar
 
 . ./common.sh
 
-# Check external program dependencies
-verify_dependencies(){
-    local dep
-    for dep in guix "$SFDISK" "$WIPEFS" "$JQ" "$PARTED" "$VGREMOVE"; do
-        command -v "$dep" &>/dev/null || {
-            echo Missing dependency "$dep" >&2
-            return 1
-        }
-    done
-}
-
 guix_setup(){
     local GUIX=guix
 
@@ -297,10 +286,6 @@ initialize_guix(){
 }
 
 main(){
-    # Check that external programs like wipefs, lvcreate etc. are
-    # available.
-    verify_dependencies
-
     # for testing, run (replace value of TARGET_DEVICE etc. as needed):
     # INSTANCE_NAME=testinstance \
     # NIC_0_IP=1.2.3.4 \
