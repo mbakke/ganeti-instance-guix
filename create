@@ -24,6 +24,12 @@ shopt -s globstar
 
 export LANG=en_US.utf8
 
+TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX)
+CLEANUP+=("rmdir $TEMPDIR")
+
+# This is the root filesystem mount-point for guix.
+TARGET_ROOT="$TEMPDIR"
+
 guix_setup(){
     local GUIX=guix
 
@@ -132,36 +138,38 @@ create_filesystems(){
             return 1
         }
 
+        # For btrfs, create a "system-root" subvolume that holds the
+        # root file system.
+        local BTRFS_ROOT="${TARGET_ROOT}/system-root"
+
         # Mount and create root filesystem
-        local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
-        CLEANUP+=("rmdir $TEMPDIR")
-        mount "$TARGET_DEV_PART2" "$TEMPDIR" || {
-            echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
+        mount "$TARGET_DEV_PART2" "$TARGET_ROOT" || {
+            echo Failed to mount "$TARGET_DEV_PART2" onto "$TARGET_ROOT" >&2
             return 1
         }
-        CLEANUP+=("umount $TEMPDIR")
-        "${BTRFS}" subvolume create "$TEMPDIR"/system-root
+        CLEANUP+=("umount $TARGET_ROOT")
+        "${BTRFS}" subvolume create "$BTRFS_ROOT"
 
         # Setup the SWAP subvolume
-        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/swap
+        "${BTRFS}" subvolume create "$BTRFS_ROOT/swap"
 
         # Setup the SWAP-file
-        chmod 700 "$TEMPDIR"/system-root/swap
-        truncate -s 0 "$TEMPDIR"/system-root/swap/swapfile
-        "${CHATTR}" +C "$TEMPDIR"/system-root/swap/swapfile
-        "${BTRFS}" property set "$TEMPDIR"/system-root/swap/swapfile compression none
-        "${FALLOCATE}" -l "$SWAP_SPACE" "$TEMPDIR"/system-root/swap/swapfile
-        chmod 600 "$TEMPDIR"/system-root/swap/swapfile
-        "${MKSWAP}" -f "$TEMPDIR"/system-root/swap/swapfile
+        chmod 700 "$BTRFS_ROOT/swap"
+        truncate -s 0 "$BTRFS_ROOT/swap/swapfile"
+        "${CHATTR}" +C "$BTRFS_ROOT/swap/swapfile"
+        "${BTRFS}" property set "$BTRFS_ROOT/swap/swapfile" compression none
+        "${FALLOCATE}" -l "$SWAP_SPACE" "$BTRFS_ROOT/swap/swapfile"
+        chmod 600 "$BTRFS_ROOT/swap/swapfile"
+        "${MKSWAP}" -f "$BTRFS_ROOT/swap/swapfile"
 
         # Setup additional subvolumes
-        mkdir -p "$TEMPDIR"/system-root/gnu
-        mkdir -p "$TEMPDIR"/system-root/var
-        mkdir -p "$TEMPDIR"/system-root/var/lib
-        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/gnu/store
-        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/log
-        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/lib/mysql
-        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/home
+        mkdir -p "$BTRFS_ROOT/gnu"
+        mkdir -p "$BTRFS_ROOT/var"
+        mkdir -p "$BTRFS_ROOT/var/lib"
+        "${BTRFS}" subvolume create "$BTRFS_ROOT/gnu/store"
+        "${BTRFS}" subvolume create "$BTRFS_ROOT/var/log"
+        "${BTRFS}" subvolume create "$BTRFS_ROOT/var/lib/mysql"
+        "${BTRFS}" subvolume create "$BTRFS_ROOT/home"
     elif [[ "$LAYOUT" == basic ]] && [[ "$FS_TYPE" == btrfs ]]; then
         "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
             echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
@@ -217,8 +225,6 @@ prep_init_mount_point(){
     local GUIX_CONFIG="$2"
     local FS_TYPE="$3"
     local LAYOUT="$4"
-    local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
-    CLEANUP+=("rmdir $TEMPDIR")
     echo Initializing guix on second partition of "$TARGET_DEVICE" using config "$GUIX_CONFIG" >&2
 
     # Assume there's a partition 1 for boot and find the second
@@ -227,47 +233,37 @@ prep_init_mount_point(){
     # mount logical volumes instead:
     local TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
     if [[ "$FS_TYPE" == "btrfs" ]]; then
-        mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
-            echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
+        mount "$TARGET_DEV_PART2" "$TARGET_ROOT" >&2 || {
+            echo Failed to mount "$TARGET_DEV_PART2" onto "$TARGET_ROOT" >&2
             return 1
         }
-        CLEANUP+=("umount $TEMPDIR")
-        # Assume that if <mountpoint>/system-root exists, it is the root filesystem
-        # mount-point for guix
-        if [[ -d "$TEMPDIR"/system-root ]]; then
-            TARGET_ROOT="$TEMPDIR"/system-root
-        else
-            TARGET_ROOT="$TEMPDIR"
-        fi
+        CLEANUP+=("umount $TARGET_ROOT")
     else
         # The standard layout for non-btrfs filesystems is setup with LVM
         if [[ "$LAYOUT" == standard ]]; then
             echo Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 of "$TARGET_DEV_PART2" >&2
-            TARGET_ROOT="$TEMPDIR"
             for lv in lv_root lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib_mysql; do
                 lv="${lv#lv_}"
                 lv="${lv%root}"
-                mkdir -p "$TEMPDIR"/"${lv//_/\/}" >&2
+                mkdir -p "$TARGET_ROOT"/"${lv//_/\/}" >&2
+                CLEANUP+=("rmdir $TARGET_ROOT/${lv//_/\/}")
                 if [[ ! "$lv" == swap ]]; then
-                    echo running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2
-                    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2 || {
-                        echo Failed to mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" on "$TEMPDIR"/"${lv//_/\/}" >&2
+                    echo running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TARGET_ROOT"/"${lv//_/\/}" >&2
+                    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TARGET_ROOT"/"${lv//_/\/}" >&2 || {
+                        echo Failed to mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" on "$TARGET_ROOT"/"${lv//_/\/}" >&2
                         return 1
                     }
-                    CLEANUP+=("umount $TEMPDIR/${lv//_/\/}")
+                    CLEANUP+=("umount $TARGET_ROOT/${lv//_/\/}")
                 fi
             done
         elif [[ "$LAYOUT" == basic ]]; then
-            mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
-                echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
+            mount "$TARGET_DEV_PART2" "$TARGET_ROOT" >&2 || {
+                echo Failed to mount "$TARGET_DEV_PART2" onto "$TARGET_ROOT" >&2
                 return 1
             }
-            CLEANUP+=("umount $TEMPDIR")
-            TARGET_ROOT="$TEMPDIR"
+            CLEANUP+=("umount $TARGET_ROOT")
         fi
     fi
-
-    printf "$TARGET_ROOT"
 }
 # guix system init on a target device's second partition
 initialize_guix(){
@@ -353,8 +349,8 @@ main(){
     create_filesystems "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
 
     # Prep the mount point to initialize guix on and then initialize guix.
-    local MOUNT_POINT=$(prep_init_mount_point "$TARGET_DEVICE" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}")
-    initialize_guix "$VARIANT_CONFIG" "$MOUNT_POINT" "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "$GUIX_COMMAND"
+    prep_init_mount_point "$TARGET_DEVICE" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
+    initialize_guix "$VARIANT_CONFIG" "$TARGET_ROOT" "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "$GUIX_COMMAND"
 }
 
 [[ "$1" == '--source-only' ]] || main "$@"
