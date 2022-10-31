@@ -314,6 +314,10 @@ initialize_guix(){
     export FS_TYPE="$4"
     local GUIX="$5"
 
+    # Build the system configuration and save GC root.
+    rm -f "$GC_ROOT"
+    $GUIX build --fallback --no-grafts -r "$GC_ROOT" "$GUIX_CONFIG"
+
     # Install GuixSD
     $GUIX init "$GUIX_CONFIG" "$TARGET_ROOT" || {
         echo Failed to guix system init "$GUIX_CONFIG" "$TARGET_ROOT" >&2
