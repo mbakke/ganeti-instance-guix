@@ -22,6 +22,8 @@ shopt -s globstar
 
 . ./common.sh
 
+export LANG=en_US.utf8
+
 guix_setup(){
     local GUIX=guix
 
