@@ -7,15 +7,6 @@
 (use-package-modules certs screen linux)
 (use-service-modules networking ssh sysctl)
 
-(let ((envfile (string-append (dirname (current-filename)) "/config.env")))
-  (if (file-exists? envfile)
-      (call-with-input-file envfile
-	(lambda (port)
-	  (let ((lines (get-string-all port)))
-	    (environ
-	     (append (delete "" (string-split lines #\newline))
-		     (environ))))))))
-
 (define (cidr->netmask address)
   "Convert a CIDR specification such as 10.0.0.0/24 to 255.255.255.0."
   (let ((mask (string->number (match (string-split address #\/)

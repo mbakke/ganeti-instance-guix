@@ -291,19 +291,6 @@ prep_init_mount_point(){
 	fi
     fi
 
-    # Create /etc/config.env on target with relevant environment
-    # variables, assuming that the value of the variables are
-    # correctly set, we therefore skip the quote for ease of parsing
-    # them back to our guix config.scm files.
-    TARGET_ETC="$TARGET_ROOT"/etc
-    mkdir -p "$TARGET_ETC" >&2
-    printf '%s\n' INSTANCE_NAME="$INSTANCE_NAME" > "$TARGET_ETC"/config.env
-    printf '%s\n' NIC_0_NETWORK_SUBNET="$NIC_0_NETWORK_SUBNET" >> "$TARGET_ETC"/config.env
-    printf '%s\n' NIC_0_NETWORK_GATEWAY="$NIC_0_NETWORK_GATEWAY" >> "$TARGET_ETC"/config.env
-    printf '%s\n' NIC_0_IP="$NIC_0_IP" >> "$TARGET_ETC"/config.env
-    printf '%s\n' FS_TYPE="$FS_TYPE" >> "$TARGET_ETC"/config.env
-    guix describe --format=json | "${JQ}" -r '"GUIX_COMMIT=" + .[].commit' >> "$TARGET_ETC"/config.env
-    cat "$(dirname "$(readlink -f "${GUIX_CONFIG}")")"/config-base.scm > "$TARGET_ETC"/config-base.scm
     printf "$TARGET_ROOT"
 }
 # guix system init on a target device's second partition
