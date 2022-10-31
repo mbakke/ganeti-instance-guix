@@ -16,11 +16,6 @@
 	     (append (delete "" (string-split lines #\newline))
 		     (environ))))))))
 
-(if (not (file-exists? "/root/.config/guix/current/bin/guix"))
- (begin
-  (invoke "guix" "pull" (string-append "--commit=" (getenv "GUIX_COMMIT")))
-  (execl "/root/.config/guix/current/bin/guix" "" "system" "reconfigure" (current-filename))))
-
 (define (cidr->netmask address)
   "Convert a CIDR specification such as 10.0.0.0/24 to 255.255.255.0."
   (let ((mask (string->number (match (string-split address #\/)
