@@ -70,13 +70,6 @@ then
   AC_MSG_ERROR([umount not found, please install util-linux])
 fi
 
-AC_ARG_VAR(WIPEFS, [wipefs path])
-AC_PATH_PROG(WIPEFS, [wipefs])
-if test -z "$WIPEFS"
-then
-  AC_MSG_ERROR([wipefs not found, please install util-linux])
-fi
-
 AC_ARG_VAR(FALLOCATE, [fallocate path])
 AC_PATH_PROG(FALLOCATE, [fallocate])
 if test -z "$FALLOCATE"

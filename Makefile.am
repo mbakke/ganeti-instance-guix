@@ -29,7 +29,6 @@ do_subst = $(SED) \
 	-e 's,[@]VARIANTSDIR[@],$(VARIANTSDIR),g' \
 	-e 's,[@]MOUNT[@],$(MOUNT),g' \
 	-e 's,[@]UMOUNT[@],$(UMOUNT),g' \
-	-e 's,[@]WIPEFS[@],$(WIPEFS),g' \
 	-e 's,[@]FALLOCATE[@],$(FALLOCATE),g' \
 	-e 's,[@]MKSWAP[@],$(MKSWAP),g' \
 	-e 's,[@]CHATTR[@],$(CHATTR),g' \

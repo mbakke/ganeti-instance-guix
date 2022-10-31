@@ -155,13 +155,11 @@ create_filesystems(){
         "${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/lib/mysql
         "${BTRFS}" subvolume create "$TEMPDIR"/system-root/home
     elif [[ "$LAYOUT" == basic ]] && [[ "$FS_TYPE" == btrfs ]]; then
-        "${WIPEFS}" -a "$TARGET_DEV_PART2"
         "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
             echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
             return 1
         }
     elif [[ "$LAYOUT" == basic ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" == xfs ]]); then
-        "${WIPEFS}" -a "$TARGET_DEV_PART2"
         "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2" || {
             echo Failed to mkfs."$FS_TYPE" on "$TARGET_DEV_PART2" >&2
             return 1
