@@ -276,13 +276,6 @@ initialize_guix(){
         echo Failed to guix system init "$GUIX_CONFIG" "$TARGET_ROOT" >&2
         return 1
     }
-    if umount -R "${TARGET_ROOT}" 2>/dev/null; then
-        echo Recursively unmounted "$TARGET_ROOT"
-    fi
-    if umount -R "${TARGET_ROOT%/system-root}" 2>/dev/null; then
-        echo Recursively unmounted "${TARGET_ROOT%/system-root}"
-    fi
-    CLEANUP+=("rmdir ${TARGET_ROOT%/system-root}")
 }
 
 main(){
