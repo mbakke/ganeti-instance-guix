@@ -122,6 +122,10 @@ create_filesystems(){
     eval MKFS_CMD=\$"MKFS_$(echo $FS_TYPE | tr '[:lower:]' '[:upper:]')"
 
     if [[ "$LAYOUT" == standard ]] && [[ "$FS_TYPE" == btrfs ]]; then
+        command -v "${BTRFS}" || {
+            log "btrfs requested but not installed"
+            exit 1
+        }
         echo Creating btrfs filesystem on second partition of "$TARGET_DEVICE" >&2
         "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
             echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
@@ -169,6 +173,10 @@ create_filesystems(){
             return 1
         }
     elif [[ "$LAYOUT" == standard ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" =~ xfs ]]); then
+        command -v "${PVCREATE}" || {
+            log "LVM requested but lvm2 is not available"
+            exit 1
+        }
         "${PARTED}" --script "$TARGET_DEVICE" \
                set 2 lvm on
         "${PVCREATE}" "$TARGET_DEV_PART2"
