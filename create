@@ -317,7 +317,6 @@ initialize_guix(){
         echo Recursively unmounted "${TARGET_ROOT%/system-root}"
     fi
     CLEANUP+=("rmdir ${TARGET_ROOT%/system-root}")
-    CLEANUP+=("${KPARTX} -d $TARGET_DEVICE")
 }
 
 main(){
@@ -378,6 +377,10 @@ main(){
 
     # A basic 2 partitions setup.
     partition_disk "$TARGET_DEVICE"
+
+    # Add partition mappings.
+    "${KPARTX}" -a "$TARGET_DEVICE"
+    CLEANUP+=("${KPARTX} -d $TARGET_DEVICE")
 
     # Each filesystem and layout option combination is handled in the
     # create_filesystems function. This will possibly setup lvm based
