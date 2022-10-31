@@ -29,7 +29,7 @@ verify_dependencies(){
         command -v "$dep" &>/dev/null || {
             echo Missing dependency "$dep" >&2
             return 1
-	}
+        }
     done
 }
 
@@ -38,31 +38,31 @@ guix_setup(){
 
     # Prepare the time machine if relevant.
     if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
-	GUIX="$GUIX time-machine"
-	if [ -n "$OSP_REPO_URI" ]; then
+        GUIX="$GUIX time-machine"
+        if [ -n "$OSP_REPO_URI" ]; then
             GUIX="$GUIX --url=$OSP_REPO_URI"
-	fi
-	if [ -n "$OSP_COMMIT" ]; then
+        fi
+        if [ -n "$OSP_COMMIT" ]; then
             GUIX="$GUIX --commit=$OSP_COMMIT"
-	fi
-	if [ -n "$OSP_BRANCH" ]; then
+        fi
+        if [ -n "$OSP_BRANCH" ]; then
             GUIX="$GUIX --branch=$OSP_BRANCH"
-	fi
-	if [ -n "$OSP_DISABLE_AUTHENTICATION" ]; then
+        fi
+        if [ -n "$OSP_DISABLE_AUTHENTICATION" ]; then
             GUIX="$GUIX --disable-authentication"
-	fi
-	log "Invoking time machine with the following parameters:"
-	log "    $(echo $GUIX | cut --complement -f1,2 -d' ')"
-	GUIX="$GUIX -- "
+        fi
+        log "Invoking time machine with the following parameters:"
+        log "    $(echo $GUIX | cut --complement -f1,2 -d' ')"
+        GUIX="$GUIX -- "
     fi
 
     GUIX="$GUIX system"
 
     if [ -n "$OSP_SYSTEM" ]; then
-	GUIX="$GUIX --system=$OSP_SYSTEM"
+        GUIX="$GUIX --system=$OSP_SYSTEM"
     fi
     if [ -n "$OSP_TARGET" ]; then
-	GUIX="$GUIX --target=$OSP_TARGET"
+        GUIX="$GUIX --target=$OSP_TARGET"
     fi
     echo "$GUIX"
 }
@@ -100,7 +100,7 @@ find_partition_path(){
     local -i num="$2"; num=$((num-1))
     "${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[$num].node" || {
         echo Failed to find partition filepath for partition "$2" for "$TARGET_DEVICE" >&2
-	return 1
+        return 1
     }
 }
 
@@ -111,7 +111,7 @@ find_uuid(){
     local -i num="$2"; num=$((num-1))
     "${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[$num].uuid" || {
         echo Failed to find partition filepath for partition "$2" for "$TARGET_DEVICE" >&2
-	return 1
+        return 1
     }
 }
 
@@ -129,87 +129,87 @@ create_filesystems(){
     eval MKFS_CMD=\$"MKFS_$(echo $FS_TYPE | tr '[:lower:]' '[:upper:]')"
 
     if [[ "$LAYOUT" == standard ]] && [[ "$FS_TYPE" == btrfs ]]; then
-	echo Creating btrfs filesystem on second partition of "$TARGET_DEVICE" >&2
-	"${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
+        echo Creating btrfs filesystem on second partition of "$TARGET_DEVICE" >&2
+        "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
             echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
-	    return 1
-	}
+            return 1
+        }
 
-	# Mount and create root filesystem
-	local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
-	CLEANUP+=("rmdir $TEMPDIR")
-	mount "$TARGET_DEV_PART2" "$TEMPDIR" || {
+        # Mount and create root filesystem
+        local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
+        CLEANUP+=("rmdir $TEMPDIR")
+        mount "$TARGET_DEV_PART2" "$TEMPDIR" || {
             echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
-	    return 1
-	}
-	CLEANUP+=("umount $TEMPDIR")
-	"${BTRFS}" subvolume create "$TEMPDIR"/system-root
+            return 1
+        }
+        CLEANUP+=("umount $TEMPDIR")
+        "${BTRFS}" subvolume create "$TEMPDIR"/system-root
 
-	# Setup the SWAP subvolume
-	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/swap
+        # Setup the SWAP subvolume
+        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/swap
 
-	# Setup the SWAP-file
-	chmod 700 "$TEMPDIR"/system-root/swap
-	truncate -s 0 "$TEMPDIR"/system-root/swap/swapfile
-	"${CHATTR}" +C "$TEMPDIR"/system-root/swap/swapfile
-	"${BTRFS}" property set "$TEMPDIR"/system-root/swap/swapfile compression none
-	"${FALLOCATE}" -l "$SWAP_SPACE" "$TEMPDIR"/system-root/swap/swapfile
-	chmod 600 "$TEMPDIR"/system-root/swap/swapfile
-	"${MKSWAP}" -f "$TEMPDIR"/system-root/swap/swapfile
+        # Setup the SWAP-file
+        chmod 700 "$TEMPDIR"/system-root/swap
+        truncate -s 0 "$TEMPDIR"/system-root/swap/swapfile
+        "${CHATTR}" +C "$TEMPDIR"/system-root/swap/swapfile
+        "${BTRFS}" property set "$TEMPDIR"/system-root/swap/swapfile compression none
+        "${FALLOCATE}" -l "$SWAP_SPACE" "$TEMPDIR"/system-root/swap/swapfile
+        chmod 600 "$TEMPDIR"/system-root/swap/swapfile
+        "${MKSWAP}" -f "$TEMPDIR"/system-root/swap/swapfile
 
-	# Setup additional subvolumes
-	mkdir -p "$TEMPDIR"/system-root/gnu
-	mkdir -p "$TEMPDIR"/system-root/var
-	mkdir -p "$TEMPDIR"/system-root/var/lib
-	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/gnu/store
-	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/log
-	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/lib/mysql
-	"${BTRFS}" subvolume create "$TEMPDIR"/system-root/home
+        # Setup additional subvolumes
+        mkdir -p "$TEMPDIR"/system-root/gnu
+        mkdir -p "$TEMPDIR"/system-root/var
+        mkdir -p "$TEMPDIR"/system-root/var/lib
+        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/gnu/store
+        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/log
+        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/var/lib/mysql
+        "${BTRFS}" subvolume create "$TEMPDIR"/system-root/home
     elif [[ "$LAYOUT" == basic ]] && [[ "$FS_TYPE" == btrfs ]]; then
-	"${WIPEFS}" -a "$TARGET_DEV_PART2"
-	"${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
+        "${WIPEFS}" -a "$TARGET_DEV_PART2"
+        "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
             echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
-	    return 1
-	}
+            return 1
+        }
     elif [[ "$LAYOUT" == basic ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" == xfs ]]); then
-	"${WIPEFS}" -a "$TARGET_DEV_PART2"
-	"${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2" || {
+        "${WIPEFS}" -a "$TARGET_DEV_PART2"
+        "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2" || {
             echo Failed to mkfs."$FS_TYPE" on "$TARGET_DEV_PART2" >&2
-	    return 1
-	}
+            return 1
+        }
     elif [[ "$LAYOUT" == standard ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" =~ xfs ]]); then
-	"${PARTED}" --script "$TARGET_DEVICE" \
-	       set 2 lvm on
-	"${PVCREATE}" "$TARGET_DEV_PART2"
-	"${VGCREATE}" "$INSTANCE_NAME"_vg01 "$TARGET_DEV_PART2"
+        "${PARTED}" --script "$TARGET_DEVICE" \
+               set 2 lvm on
+        "${PVCREATE}" "$TARGET_DEV_PART2"
+        "${VGCREATE}" "$INSTANCE_NAME"_vg01 "$TARGET_DEV_PART2"
         CLEANUP+=("${VGREMOVE} -y $INSTANCE_NAME_vg01")
-	ROOT_SIZE='-l 10%VG'
-	HOME_SIZE='-l 10%VG'
-	GNU_STORE_SIZE='-l 55%VG'
-	VAR_LOG_SIZE='-l 10%VG'
-	VAR_LIB_MYSQL_SIZE='-l 10%VG'
-	SWAP_SIZE='-l 100%FREE'
-	"${LVCREATE}" --yes -n lv_root $ROOT_SIZE -W y "$INSTANCE_NAME"_vg01
-	"${LVCREATE}" --yes -n lv_home $HOME_SIZE -W y "$INSTANCE_NAME"_vg01
-	"${LVCREATE}" --yes -n lv_gnu_store $GNU_STORE_SIZE -W y "$INSTANCE_NAME"_vg01
-	"${LVCREATE}" --yes -n lv_var_log $VAR_LOG_SIZE -W y "$INSTANCE_NAME"_vg01
-	"${LVCREATE}" --yes -n lv_var_lib_mysql $VAR_LIB_MYSQL_SIZE -W y "$INSTANCE_NAME"_vg01
-	"${LVCREATE}" --yes -n lv_swap $SWAP_SIZE -W y "$INSTANCE_NAME"_vg01
-	# -f (force) is needed if reinstalling and previous
-	# logical-volume also was a swap volume and still has that
-	# signature, else mkswap command will wait for user
-	# confirmation
-	"${MKSWAP}" -f --label "$INSTANCE_NAME"-swap /dev/"$INSTANCE_NAME"_vg01/lv_swap
-	echo Creating "$FS_TYPE" filesystems on logical volumes of "$INSTANCE_NAME"_vg01 of "$TARGET_DEV_PART2" >&2
-	for lv in lv_root lv_home lv_gnu_store lv_var_log lv_var_lib_mysql; do
-	    "$MKFS_CMD" "/dev/${INSTANCE_NAME}_vg01/${lv}" || {
-		echo Failed to mkfs."$FS_TYPE" on /dev/"${INSTANCE_NAME}_vg01/$lv" >&2
-		return 1
-	    }
-	done
+        ROOT_SIZE='-l 10%VG'
+        HOME_SIZE='-l 10%VG'
+        GNU_STORE_SIZE='-l 55%VG'
+        VAR_LOG_SIZE='-l 10%VG'
+        VAR_LIB_MYSQL_SIZE='-l 10%VG'
+        SWAP_SIZE='-l 100%FREE'
+        "${LVCREATE}" --yes -n lv_root $ROOT_SIZE -W y "$INSTANCE_NAME"_vg01
+        "${LVCREATE}" --yes -n lv_home $HOME_SIZE -W y "$INSTANCE_NAME"_vg01
+        "${LVCREATE}" --yes -n lv_gnu_store $GNU_STORE_SIZE -W y "$INSTANCE_NAME"_vg01
+        "${LVCREATE}" --yes -n lv_var_log $VAR_LOG_SIZE -W y "$INSTANCE_NAME"_vg01
+        "${LVCREATE}" --yes -n lv_var_lib_mysql $VAR_LIB_MYSQL_SIZE -W y "$INSTANCE_NAME"_vg01
+        "${LVCREATE}" --yes -n lv_swap $SWAP_SIZE -W y "$INSTANCE_NAME"_vg01
+        # -f (force) is needed if reinstalling and previous
+        # logical-volume also was a swap volume and still has that
+        # signature, else mkswap command will wait for user
+        # confirmation
+        "${MKSWAP}" -f --label "$INSTANCE_NAME"-swap /dev/"$INSTANCE_NAME"_vg01/lv_swap
+        echo Creating "$FS_TYPE" filesystems on logical volumes of "$INSTANCE_NAME"_vg01 of "$TARGET_DEV_PART2" >&2
+        for lv in lv_root lv_home lv_gnu_store lv_var_log lv_var_lib_mysql; do
+            "$MKFS_CMD" "/dev/${INSTANCE_NAME}_vg01/${lv}" || {
+                echo Failed to mkfs."$FS_TYPE" on /dev/"${INSTANCE_NAME}_vg01/$lv" >&2
+                return 1
+            }
+        done
     else
-	echo "Unsupported filesystem type and/or layout combination: FS_TYPE: $FS_TYPE LAYOUT: $LAYOUT"
-	return 1
+        echo "Unsupported filesystem type and/or layout combination: FS_TYPE: $FS_TYPE LAYOUT: $LAYOUT"
+        return 1
     fi
 }
 
@@ -228,44 +228,44 @@ prep_init_mount_point(){
     # mount logical volumes instead:
     local TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
     if [[ "$FS_TYPE" == "btrfs" ]]; then
-	mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
+        mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
             echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
-	    return 1
-	}
+            return 1
+        }
         CLEANUP+=("umount $TEMPDIR")
-	# Assume that if <mountpoint>/system-root exists, it is the root filesystem
-	# mount-point for guix
-	if [[ -d "$TEMPDIR"/system-root ]]; then
-	    TARGET_ROOT="$TEMPDIR"/system-root
-	else
-	    TARGET_ROOT="$TEMPDIR"
-	fi
+        # Assume that if <mountpoint>/system-root exists, it is the root filesystem
+        # mount-point for guix
+        if [[ -d "$TEMPDIR"/system-root ]]; then
+            TARGET_ROOT="$TEMPDIR"/system-root
+        else
+            TARGET_ROOT="$TEMPDIR"
+        fi
     else
-	# The standard layout for non-btrfs filesystems is setup with LVM
-	if [[ "$LAYOUT" == standard ]]; then
-	    echo Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 of "$TARGET_DEV_PART2" >&2
-	    TARGET_ROOT="$TEMPDIR"
-	    for lv in lv_root lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib_mysql; do
-		lv="${lv#lv_}"
-		lv="${lv%root}"
-		mkdir -p "$TEMPDIR"/"${lv//_/\/}" >&2
-		if [[ ! "$lv" == swap ]]; then
-		    echo running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2
-		    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2 || {
-			echo Failed to mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" on "$TEMPDIR"/"${lv//_/\/}" >&2
-			return 1
-		    }
+        # The standard layout for non-btrfs filesystems is setup with LVM
+        if [[ "$LAYOUT" == standard ]]; then
+            echo Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 of "$TARGET_DEV_PART2" >&2
+            TARGET_ROOT="$TEMPDIR"
+            for lv in lv_root lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib_mysql; do
+                lv="${lv#lv_}"
+                lv="${lv%root}"
+                mkdir -p "$TEMPDIR"/"${lv//_/\/}" >&2
+                if [[ ! "$lv" == swap ]]; then
+                    echo running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2
+                    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2 || {
+                        echo Failed to mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" on "$TEMPDIR"/"${lv//_/\/}" >&2
+                        return 1
+                    }
                     CLEANUP+=("umount $TEMPDIR/${lv//_/\/}")
-		fi
-	    done
-	elif [[ "$LAYOUT" == basic ]]; then
-	    mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
-		echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
-		return 1
-	    }
+                fi
+            done
+        elif [[ "$LAYOUT" == basic ]]; then
+            mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
+                echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
+                return 1
+            }
             CLEANUP+=("umount $TEMPDIR")
-	    TARGET_ROOT="$TEMPDIR"
-	fi
+            TARGET_ROOT="$TEMPDIR"
+        fi
     fi
 
     printf "$TARGET_ROOT"
@@ -285,7 +285,7 @@ initialize_guix(){
     # Install GuixSD
     $GUIX init "$GUIX_CONFIG" "$TARGET_ROOT" || {
         echo Failed to guix system init "$GUIX_CONFIG" "$TARGET_ROOT" >&2
-	return 1
+        return 1
     }
     if umount -R "${TARGET_ROOT}" 2>/dev/null; then
         echo Recursively unmounted "$TARGET_ROOT"
