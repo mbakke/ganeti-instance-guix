@@ -160,7 +160,7 @@ create_filesystems(){
         chmod 700 "$BTRFS_ROOT/swap"
         truncate -s 0 "$BTRFS_ROOT/swap/swapfile"
         "${CHATTR}" +C "$BTRFS_ROOT/swap/swapfile"
-        "${BTRFS}" property set "$BTRFS_ROOT/swap/swapfile" compression none
+        "${BTRFS}" property set "$BTRFS_ROOT/swap" compression none
         "${FALLOCATE}" -l "$SWAP_SPACE" "$BTRFS_ROOT/swap/swapfile"
         chmod 600 "$BTRFS_ROOT/swap/swapfile"
         "${MKSWAP}" -f "$BTRFS_ROOT/swap/swapfile"
