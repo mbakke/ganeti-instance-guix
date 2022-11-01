@@ -10,3 +10,4 @@
 /INSTALL
 Makefile
 Makefile.in
+examples/dynamic*.scm
