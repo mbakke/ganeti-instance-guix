@@ -231,19 +231,20 @@ prep_init_mount_point(){
     echo Initializing guix on second partition of "$TARGET_DEVICE" using config "$GUIX_CONFIG" >&2
 
     # Assume there's a partition 1 for boot and find the second
-    # partition's filepath. If FS_TYPE is btrfs we can just mount it,
-    # else we assume second partition is an LVM partition and we must
-    # mount logical volumes instead:
+    # partition's filepath.
     local TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
-    if [[ "$FS_TYPE" == "btrfs" ]]; then
-        mount "$TARGET_DEV_PART2" "$TARGET_ROOT" >&2 || {
-            echo Failed to mount "$TARGET_DEV_PART2" onto "$TARGET_ROOT" >&2
-            return 1
-        }
+
+    if [[ "$LAYOUT" == "basic" ]]; then
+        # Basic layouts can just be mounted directly.
+        mount "$TARGET_DEV_PART2" "$TARGET_ROOT"
         CLEANUP+=("umount $TARGET_ROOT")
     else
-        # The standard layout for non-btrfs filesystems is setup with LVM
-        if [[ "$LAYOUT" == standard ]]; then
+        if [[ "$FS_TYPE" == "btrfs" ]]; then
+            # The standard btrfs layout uses a system-root subvolume.
+            mount -o "subvol=system-root" "$TARGET_DEV_PART2" "$TARGET_ROOT"
+            CLEANUP+=("umount $TARGET_ROOT")
+        else
+            # The standard layout for non-btrfs filesystems is setup with LVM
             echo Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 of "$TARGET_DEV_PART2" >&2
             mount "/dev/${INSTANCE_NAME}_vg01/lv_root" "$TARGET_ROOT"
             CLEANUP+=("umount $TARGET_ROOT")
@@ -256,15 +257,10 @@ prep_init_mount_point(){
                     CLEANUP+=("umount $TARGET_ROOT/${lv//_/\/}")
                 fi
             done
-        elif [[ "$LAYOUT" == basic ]]; then
-            mount "$TARGET_DEV_PART2" "$TARGET_ROOT" >&2 || {
-                echo Failed to mount "$TARGET_DEV_PART2" onto "$TARGET_ROOT" >&2
-                return 1
-            }
-            CLEANUP+=("umount $TARGET_ROOT")
         fi
     fi
 }
+
 # guix system init on a target device's second partition
 initialize_guix(){
     local GUIX_CONFIG="$1"
