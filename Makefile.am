@@ -6,7 +6,7 @@ dist_os_SCRIPTS = create import export rename verify
 dist_os_DATA = ganeti_api_version parameters.list
 os_DATA = common.sh
 
-dist_doc_DATA = COPYING NEWS README
+dist_doc_DATA = COPYING NEWS README.md
 
 exampledir = $(docdir)/examples
 
