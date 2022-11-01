@@ -31,8 +31,6 @@ CLEANUP+=("rmdir $TEMPDIR")
 TARGET_ROOT="$TEMPDIR"
 
 guix_setup(){
-    local GUIX=guix
-
     # Prepare the time machine if relevant.
     if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
         GUIX="$GUIX time-machine"
