@@ -32,7 +32,7 @@ TARGET_ROOT="$TEMPDIR"
 
 guix_setup(){
     # Prepare the time machine if relevant.
-    if [ -n "$OSP_COMMIT" -o -n "$OSP_BRANCH" -o -n "$OSP_REPO_URI" ]; then
+    if [ -n "$OSP_COMMIT" ] || [ -n "$OSP_BRANCH" ] || [ -n "$OSP_REPO_URI" ]; then
         GUIX="$GUIX time-machine"
         if [ -n "$OSP_REPO_URI" ]; then
             GUIX="$GUIX --url=$OSP_REPO_URI"
@@ -93,6 +93,7 @@ partition_disk(){
 find_partition_path(){
     local TARGET_DEVICE="$1"
     local part="$2"
+    local mappedname
 
     # This is somewhat tricky.  kpartx partitions always end up in /etc/mapper,
     # but TARGET_DEVICE is typically one of:
@@ -102,7 +103,7 @@ find_partition_path(){
     # For the first two, the mapped device becomes e.g. /dev/mapper/drbdNpN.
     # For the latter, the mapped device becomes /dev/mapper/vg-a--b--c--d.disk0pN.
 
-    local mappedname="$($KPARTX -l $TARGET_DEVICE | awk '{ print $1 }' | grep -m 1 "p${part}$")"
+    mappedname="$("$KPARTX" -l "$TARGET_DEVICE" | awk '{ print $1 }' | grep -m 1 "p${part}$")"
     echo "/dev/mapper/${mappedname}"
 }
 
@@ -114,10 +115,11 @@ create_filesystems(){
     local SWAP_SPACE=4G
 
     # Find the second partitions filepaths':
-    local TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
+    local TARGET_DEV_PART2
+    TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
 
     # Resolve the corresponding $MKFS_$FS_TYPE variable.
-    eval MKFS_CMD=\$"MKFS_$(echo $FS_TYPE | tr '[:lower:]' '[:upper:]')"
+    eval MKFS_CMD=\$"MKFS_$(echo "$FS_TYPE" | tr '[:lower:]' '[:upper:]')"
 
     if [[ "$LAYOUT" == basic ]]; then
         "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2" || {
@@ -140,8 +142,8 @@ create_filesystems(){
         local BTRFS_ROOT="${TARGET_ROOT}/system-root"
 
         # Mount and create root filesystem
-        mount "$TARGET_DEV_PART2" "$TARGET_ROOT" || {
-            log Failed to mount "$TARGET_DEV_PART2" onto "$TARGET_ROOT"
+        "$MOUNT" "$TARGET_DEV_PART2" "$TARGET_ROOT" || {
+            log Failed to "$MOUNT" "$TARGET_DEV_PART2" onto "$TARGET_ROOT"
             return 1
         }
         "${BTRFS}" subvolume create "$BTRFS_ROOT"
@@ -165,7 +167,7 @@ create_filesystems(){
         "${BTRFS}" subvolume create "$BTRFS_ROOT/var/lib"
         "${BTRFS}" subvolume create "$BTRFS_ROOT/var/log"
         "${BTRFS}" subvolume create "$BTRFS_ROOT/home"
-        umount "$TARGET_ROOT"
+        "$UMOUNT" "$TARGET_ROOT"
     elif [[ "$LAYOUT" == standard ]]; then
         # Assume LVM.
         command -v "${PVCREATE}" || {
@@ -220,32 +222,33 @@ prep_init_mount_point(){
 
     # Assume there's a partition 1 for boot and find the second
     # partition's filepath.
-    local TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
+    local TARGET_DEV_PART2
+    TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
 
     if [[ "$LAYOUT" == "basic" ]]; then
         # Basic layouts can just be mounted directly.
-        mount "$TARGET_DEV_PART2" "$TARGET_ROOT"
-        CLEANUP+=("umount $TARGET_ROOT")
+        "$MOUNT" "$TARGET_DEV_PART2" "$TARGET_ROOT"
+        CLEANUP+=("$UMOUNT $TARGET_ROOT")
     else
         if [[ "$FS_TYPE" == "btrfs" ]]; then
             # The standard btrfs layout uses a system-root subvolume.
-            mount -o "subvol=system-root" "$TARGET_DEV_PART2" "$TARGET_ROOT"
-            CLEANUP+=("umount $TARGET_ROOT")
+            "$MOUNT" -o "subvol=system-root" "$TARGET_DEV_PART2" "$TARGET_ROOT"
+            CLEANUP+=("$UMOUNT $TARGET_ROOT")
         else
             # The standard layout for non-btrfs filesystems is setup with LVM
             log Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 \
                 of "$TARGET_DEV_PART2"
-            mount "/dev/${INSTANCE_NAME}_vg01/lv_root" "$TARGET_ROOT"
-            CLEANUP+=("umount $TARGET_ROOT")
+            "$MOUNT" "/dev/${INSTANCE_NAME}_vg01/lv_root" "$TARGET_ROOT"
+            CLEANUP+=("$UMOUNT $TARGET_ROOT")
             for lv in lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib; do
                 lv="${lv#lv_}"
                 mkdir -p "$TARGET_ROOT"/"${lv//_/\/}" >&2
                 if [[ ! "$lv" == swap ]]; then
-                    log running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" \
+                    log running: "$MOUNT" "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" \
                         "$TARGET_ROOT"/"${lv//_/\/}" >&2
-                    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" \
+                    "$MOUNT" "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" \
                           "$TARGET_ROOT"/"${lv//_/\/}"
-                    CLEANUP+=("umount $TARGET_ROOT/${lv//_/\/}")
+                    CLEANUP+=("$UMOUNT $TARGET_ROOT/${lv//_/\/}")
                 fi
             done
         fi
@@ -317,7 +320,8 @@ main(){
 
     # Check OS parameters and set an appropriate $GUIX command that
     # will use guix time-machine if needed.
-    local GUIX_COMMAND=$(guix_setup)
+    local GUIX_COMMAND
+    GUIX_COMMAND=$(guix_setup)
     log GUIX_COMMAND is: "$GUIX_COMMAND"
 
     # Say 'cheeese'.
