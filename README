@@ -38,7 +38,6 @@ Dependencies:
 * Guix
 * util-linux
 * multipath-tools
-* jq
 * e2fsprogs
 * parted
 

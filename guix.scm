@@ -24,8 +24,7 @@
              (gnu packages autotools)
              (gnu packages disk)
              (gnu packages linux)
-             (gnu packages virtualization)
-             (gnu packages web))
+             (gnu packages virtualization))
 
 (define %source-dir (dirname (current-filename)))
 
@@ -54,7 +53,6 @@
     (list autoconf automake))
    (inputs
     (list e2fsprogs
-          jq
           lvm2
           multipath-tools
           parted

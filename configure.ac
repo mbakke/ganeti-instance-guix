@@ -98,13 +98,6 @@ then
   AC_MSG_ERROR([chattr not found, please install e2fsprogs])
 fi
 
-AC_ARG_VAR(JQ, [jq path])
-AC_PATH_PROG(JQ, [jq])
-if test -z "$JQ"
-then
-  AC_MSG_ERROR([jq not found, please install jq])
-fi
-
 AC_ARG_VAR(PARTED, [parted path])
 AC_PATH_PROG(PARTED, [parted])
 if test -z "$PARTED"

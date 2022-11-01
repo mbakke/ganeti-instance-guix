@@ -31,7 +31,6 @@ do_subst = $(SED) \
 	-e 's,[@]FALLOCATE[@],$(FALLOCATE),g' \
 	-e 's,[@]MKSWAP[@],$(MKSWAP),g' \
 	-e 's,[@]CHATTR[@],$(CHATTR),g' \
-	-e 's,[@]JQ[@],$(JQ),g' \
 	-e 's,[@]PARTED[@],$(PARTED),g' \
 	-e 's,[@]BTRFS[@],$(BTRFS),g' \
 	-e 's,[@]MKFS_BTRFS[@],$(MKFS_BTRFS),g' \
