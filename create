@@ -245,17 +245,14 @@ prep_init_mount_point(){
         # The standard layout for non-btrfs filesystems is setup with LVM
         if [[ "$LAYOUT" == standard ]]; then
             echo Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 of "$TARGET_DEV_PART2" >&2
-            for lv in lv_root lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib_mysql; do
+            mount "/dev/${INSTANCE_NAME}_vg01/lv_root" "$TARGET_ROOT"
+            CLEANUP+=("umount $TARGET_ROOT")
+            for lv in lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib_mysql; do
                 lv="${lv#lv_}"
-                lv="${lv%root}"
                 mkdir -p "$TARGET_ROOT"/"${lv//_/\/}" >&2
-                CLEANUP+=("rmdir $TARGET_ROOT/${lv//_/\/}")
                 if [[ ! "$lv" == swap ]]; then
-                    echo running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TARGET_ROOT"/"${lv//_/\/}" >&2
-                    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TARGET_ROOT"/"${lv//_/\/}" >&2 || {
-                        echo Failed to mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" on "$TARGET_ROOT"/"${lv//_/\/}" >&2
-                        return 1
-                    }
+                    echo running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" "$TARGET_ROOT"/"${lv//_/\/}" >&2
+                    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" "$TARGET_ROOT"/"${lv//_/\/}"
                     CLEANUP+=("umount $TARGET_ROOT/${lv//_/\/}")
                 fi
             done
