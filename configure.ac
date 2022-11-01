@@ -84,13 +84,6 @@ then
   AC_MSG_ERROR([losetup not found])
 fi
 
-AC_ARG_VAR(SFDISK, [sfdisk path])
-AC_PATH_PROG(SFDISK, [sfdisk])
-if test -z "$SFDISK"
-then
-  AC_MSG_ERROR([sfdisk not found])
-fi
-
 AC_ARG_VAR(CHATTR, [chattr path]) # e2fsprogs also covers mkfs.ext{2,3,4}
 AC_PATH_PROG(CHATTR, [chattr])
 if test -z "$CHATTR"
