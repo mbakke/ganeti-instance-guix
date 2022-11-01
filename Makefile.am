@@ -43,7 +43,7 @@ do_subst = $(SED) \
 	-e 's,[@]KPARTX[@],$(KPARTX),g' \
 	-e 's,[@]PVCREATE[@],$(PVCREATE),g' \
 	-e 's,[@]VGCREATE[@],$(VGCREATE),g' \
-	-e 's,[@]VGREMOVE[@],$(VGREMOVE),g' \
+	-e 's,[@]VGCHANGE[@],$(VGCHANGE),g' \
 	-e 's,[@]LVCREATE[@],$(LVCREATE),g' \
 	-e 's,[@]LOSETUP[@],$(LOSETUP),g'
 

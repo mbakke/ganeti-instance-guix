@@ -134,8 +134,8 @@ AC_PATH_PROG(PVCREATE, [pvcreate], pvcreate)
 AC_ARG_VAR(VGCREATE, [vgcreate path])
 AC_PATH_PROG(VGCREATE, [vgcreate], vgcreate)
 
-AC_ARG_VAR(VGREMOVE, [vgremove path])
-AC_PATH_PROG(VGREMOVE, [vgremove], vgremove)
+AC_ARG_VAR(VGCHANGE, [vgchange path])
+AC_PATH_PROG(VGCHANGE, [vgchange], vgchange)
 
 AC_ARG_VAR(LVCREATE, [lvcreate path])
 AC_PATH_PROG(LVCREATE, [lvcreate], lvcreate)
