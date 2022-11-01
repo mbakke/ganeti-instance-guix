@@ -150,7 +150,6 @@ create_filesystems(){
             echo Failed to mount "$TARGET_DEV_PART2" onto "$TARGET_ROOT" >&2
             return 1
         }
-        CLEANUP+=("umount $TARGET_ROOT")
         "${BTRFS}" subvolume create "$BTRFS_ROOT"
 
         # Setup the SWAP subvolume
@@ -173,6 +172,7 @@ create_filesystems(){
         "${BTRFS}" subvolume create "$BTRFS_ROOT/var/log"
         "${BTRFS}" subvolume create "$BTRFS_ROOT/var/lib/mysql"
         "${BTRFS}" subvolume create "$BTRFS_ROOT/home"
+        umount "$TARGET_ROOT"
     elif [[ "$LAYOUT" == basic ]] && [[ "$FS_TYPE" == btrfs ]]; then
         "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
             echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
