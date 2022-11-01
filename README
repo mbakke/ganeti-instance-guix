@@ -44,7 +44,7 @@ Dependencies:
 These are optional:
 * xfsprogs
 * btrfs-progs
-* lvm2
+* lvm2, for LVM support (experimental)
 
 Limitations:
 
