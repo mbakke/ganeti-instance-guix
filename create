@@ -66,7 +66,7 @@ guix_setup(){
 partition_disk(){
     local TARGET_DEVICE="$1"
 
-    echo Starting partitioning on "$TARGET_DEVICE" >&2
+    log Starting partitioning on "$TARGET_DEVICE"
 
     # It has happened that some VM has kernel panicked due to first
     # sectors not being properly wiped, and writing some random stuff
@@ -76,14 +76,14 @@ partition_disk(){
     # Create bios_grub partition and offset so it's easy to use either
     # of MBR or GPT or to switch between them.
     # https://www.gnu.org/software/grub/manual/grub/html_node/BIOS-installation.html#BIOS-installation
-    echo Creating 2 partitions on "$TARGET_DEVICE" >&2
+    log Creating 2 partitions on "$TARGET_DEVICE"
     "${PARTED}" --script "$TARGET_DEVICE" \
     mklabel gpt \
     mkpart primary 1MiB 3MiB \
     mkpart primary 3MiB 100% \
     set 1 bios_grub on
     [[ "$?" == 0 ]] || {
-        echo Failed to partition "$TARGET_DEVICE" >&2
+        log Failed to partition "$TARGET_DEVICE"
         return 1
     }
 }
@@ -124,9 +124,9 @@ create_filesystems(){
             log "btrfs requested but not installed"
             exit 1
         }
-        echo Creating btrfs filesystem on second partition of "$TARGET_DEVICE" >&2
+        log Creating btrfs filesystem on second partition of "$TARGET_DEVICE"
         "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
-            echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
+            log Failed to mkfs.btrfs on "$TARGET_DEV_PART2"
             return 1
         }
 
@@ -136,7 +136,7 @@ create_filesystems(){
 
         # Mount and create root filesystem
         mount "$TARGET_DEV_PART2" "$TARGET_ROOT" || {
-            echo Failed to mount "$TARGET_DEV_PART2" onto "$TARGET_ROOT" >&2
+            log Failed to mount "$TARGET_DEV_PART2" onto "$TARGET_ROOT"
             return 1
         }
         "${BTRFS}" subvolume create "$BTRFS_ROOT"
@@ -164,12 +164,12 @@ create_filesystems(){
         umount "$TARGET_ROOT"
     elif [[ "$LAYOUT" == basic ]] && [[ "$FS_TYPE" == btrfs ]]; then
         "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
-            echo Failed to mkfs.btrfs on "$TARGET_DEV_PART2" >&2
+            log Failed to mkfs.btrfs on "$TARGET_DEV_PART2"
             return 1
         }
     elif [[ "$LAYOUT" == basic ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" == xfs ]]); then
         "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2" || {
-            echo Failed to mkfs."$FS_TYPE" on "$TARGET_DEV_PART2" >&2
+            log Failed to mkfs."$FS_TYPE" on "$TARGET_DEV_PART2"
             return 1
         }
     elif [[ "$LAYOUT" == standard ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" =~ xfs ]]); then
@@ -198,16 +198,19 @@ create_filesystems(){
         # logical-volume also was a swap volume and still has that
         # signature, else mkswap command will wait for user
         # confirmation
-        "${MKSWAP}" -f --label "$INSTANCE_NAME"-swap /dev/"$INSTANCE_NAME"_vg01/lv_swap
-        echo Creating "$FS_TYPE" filesystems on logical volumes of "$INSTANCE_NAME"_vg01 of "$TARGET_DEV_PART2" >&2
+        "${MKSWAP}" -f --label "$INSTANCE_NAME"-swap \
+                    /dev/"$INSTANCE_NAME"_vg01/lv_swap
+        log Creating "$FS_TYPE" filesystems on logical volumes \
+            of "$INSTANCE_NAME"_vg01 of "$TARGET_DEV_PART2"
         for lv in lv_root lv_home lv_gnu_store lv_var_log lv_var_lib_mysql; do
             "$MKFS_CMD" "/dev/${INSTANCE_NAME}_vg01/${lv}" || {
-                echo Failed to mkfs."$FS_TYPE" on /dev/"${INSTANCE_NAME}_vg01/$lv" >&2
+                log Failed to mkfs."$FS_TYPE" on /dev/"${INSTANCE_NAME}_vg01/$lv"
                 return 1
             }
         done
     else
-        echo "Unsupported filesystem type and/or layout combination: FS_TYPE: $FS_TYPE LAYOUT: $LAYOUT"
+        log "Unsupported filesystem type and/or layout combination:"
+        log " FS_TYPE: $FS_TYPE LAYOUT: $LAYOUT"
         return 1
     fi
 }
@@ -217,7 +220,8 @@ prep_init_mount_point(){
     local GUIX_CONFIG="$2"
     local FS_TYPE="$3"
     local LAYOUT="$4"
-    echo Initializing guix on second partition of "$TARGET_DEVICE" using config "$GUIX_CONFIG" >&2
+    log Initializing guix on second partition of "$TARGET_DEVICE" \
+        using config "$GUIX_CONFIG"
 
     # Assume there's a partition 1 for boot and find the second
     # partition's filepath.
@@ -234,15 +238,18 @@ prep_init_mount_point(){
             CLEANUP+=("umount $TARGET_ROOT")
         else
             # The standard layout for non-btrfs filesystems is setup with LVM
-            echo Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 of "$TARGET_DEV_PART2" >&2
+            log Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 \
+                of "$TARGET_DEV_PART2"
             mount "/dev/${INSTANCE_NAME}_vg01/lv_root" "$TARGET_ROOT"
             CLEANUP+=("umount $TARGET_ROOT")
             for lv in lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib_mysql; do
                 lv="${lv#lv_}"
                 mkdir -p "$TARGET_ROOT"/"${lv//_/\/}" >&2
                 if [[ ! "$lv" == swap ]]; then
-                    echo running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" "$TARGET_ROOT"/"${lv//_/\/}" >&2
-                    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" "$TARGET_ROOT"/"${lv//_/\/}"
+                    log running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" \
+                        "$TARGET_ROOT"/"${lv//_/\/}" >&2
+                    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" \
+                          "$TARGET_ROOT"/"${lv//_/\/}"
                     CLEANUP+=("umount $TARGET_ROOT/${lv//_/\/}")
                 fi
             done
@@ -264,7 +271,7 @@ initialize_guix(){
 
     # Install GuixSD
     $GUIX init "$GUIX_CONFIG" "$TARGET_ROOT" || {
-        echo Failed to guix system init "$GUIX_CONFIG" "$TARGET_ROOT" >&2
+        log Failed to guix system init "$GUIX_CONFIG" "$TARGET_ROOT"
         return 1
     }
 }
@@ -281,11 +288,11 @@ main(){
     # ./create
     local DEFAULT_VARIANT_CONFIG="${EXAMPLEDIR}/dynamic.scm"
     local VARIANT_CONFIG="${VARIANT_CONFIG:-$DEFAULT_VARIANT_CONFIG}"
-    echo Running with options set to:
-    echo TARGET_DEVICE: "${TARGET_DEVICE}"
-    echo OSP_FILESYSTEM: "${OSP_FILESYSTEM:-ext4}"
-    echo OSP_LAYOUT: "${OSP_LAYOUT:-basic}"
-    echo VARIANT_CONFIG: "${VARIANT_CONFIG}"
+    log Running with options set to:
+    log TARGET_DEVICE: "${TARGET_DEVICE}"
+    log OSP_FILESYSTEM: "${OSP_FILESYSTEM:-ext4}"
+    log OSP_LAYOUT: "${OSP_LAYOUT:-basic}"
+    log VARIANT_CONFIG: "${VARIANT_CONFIG}"
 
     # Make Guix use the specified CACHE_DIR to store Guile and Git caches.
     if [[ -n "$CACHE_DIR" ]] && [[ ! -d "$CACHE_DIR" ]]; then
@@ -307,7 +314,7 @@ main(){
     if [[ ! -b "$TARGET_DEVICE" ]]; then
         local TARGET_DEVICE_ORIG="$TARGET_DEVICE"
         if ! TARGET_DEVICE=$("${LOSETUP}" --show -f "$TARGET_DEVICE"); then
-            echo Failed to "${LOSETUP}" "$TARGET_DEVICE_ORIG" >&2
+            log Failed to "${LOSETUP}" "$TARGET_DEVICE_ORIG"
             return 1
         fi
         CLEANUP+=("${LOSETUP} -d $TARGET_DEVICE")
@@ -316,7 +323,7 @@ main(){
     # Check OS parameters and set an appropriate $GUIX command that
     # will use guix time-machine if needed.
     local GUIX_COMMAND=$(guix_setup)
-    echo GUIX_COMMAND is: "$GUIX_COMMAND"
+    log GUIX_COMMAND is: "$GUIX_COMMAND"
 
     # Say 'cheeese'.
     $GUIX_COMMAND --version
