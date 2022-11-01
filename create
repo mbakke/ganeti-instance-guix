@@ -192,7 +192,7 @@ create_filesystems(){
                set 2 lvm on
         "${PVCREATE}" "$TARGET_DEV_PART2"
         "${VGCREATE}" "$INSTANCE_NAME"_vg01 "$TARGET_DEV_PART2"
-        CLEANUP+=("${VGREMOVE} -y $INSTANCE_NAME_vg01")
+        CLEANUP+=("${VGREMOVE} -y ${INSTANCE_NAME}_vg01")
         ROOT_SIZE='-l 10%VG'
         HOME_SIZE='-l 10%VG'
         GNU_STORE_SIZE='-l 55%VG'
