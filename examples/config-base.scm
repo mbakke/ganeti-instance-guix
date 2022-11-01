@@ -42,7 +42,8 @@
      (file-system
       (device (file-system-label (string-append (getenv "INSTANCE_NAME") "-system")))
       (mount-point "/")
-      (type "ext4"))
+      (type (or (getenv "OSP_FILESYSTEM")
+                "ext4")))
      %base-file-systems))
    ;; This is where user accounts are specified.  The "root"
    ;; account is implicit, and is initially created with the
