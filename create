@@ -119,7 +119,12 @@ create_filesystems(){
     # Resolve the corresponding $MKFS_$FS_TYPE variable.
     eval MKFS_CMD=\$"MKFS_$(echo $FS_TYPE | tr '[:lower:]' '[:upper:]')"
 
-    if [[ "$LAYOUT" == standard ]] && [[ "$FS_TYPE" == btrfs ]]; then
+    if [[ "$LAYOUT" == basic ]]; then
+        "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2" || {
+            log Failed to mkfs."$FS_TYPE" on "$TARGET_DEV_PART2"
+            return 1
+        }
+    elif [[ "$FS_TYPE" == btrfs ]]; then
         command -v "${BTRFS}" || {
             log "btrfs requested but not installed"
             exit 1
@@ -161,17 +166,8 @@ create_filesystems(){
         "${BTRFS}" subvolume create "$BTRFS_ROOT/var/log"
         "${BTRFS}" subvolume create "$BTRFS_ROOT/home"
         umount "$TARGET_ROOT"
-    elif [[ "$LAYOUT" == basic ]] && [[ "$FS_TYPE" == btrfs ]]; then
-        "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
-            log Failed to mkfs.btrfs on "$TARGET_DEV_PART2"
-            return 1
-        }
-    elif [[ "$LAYOUT" == basic ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" == xfs ]]); then
-        "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2" || {
-            log Failed to mkfs."$FS_TYPE" on "$TARGET_DEV_PART2"
-            return 1
-        }
-    elif [[ "$LAYOUT" == standard ]] && ([[ "$FS_TYPE" =~ ext(2|3|4) ]] || [[ "$FS_TYPE" =~ xfs ]]); then
+    elif [[ "$LAYOUT" == standard ]]; then
+        # Assume LVM.
         command -v "${PVCREATE}" || {
             log "LVM requested but lvm2 is not available"
             exit 1
