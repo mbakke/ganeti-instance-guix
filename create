@@ -94,11 +94,16 @@ find_partition_path(){
     local TARGET_DEVICE="$1"
     local part="$2"
 
-    # XXX: kpartx always adds partitions in /dev/mapper, so for DRBD devices
-    # the partitions appear under /dev/mapper/drbdNpN, not /dev/drbdNpN as
-    # tools like sfdisk assume.
-    local devname=$(basename "$TARGET_DEVICE")
-    echo "/dev/mapper/${devname}p${part}"
+    # This is somewhat tricky.  kpartx partitions always end up in /etc/mapper,
+    # but TARGET_DEVICE is typically one of:
+    # * /dev/loopN (for files)
+    # * /dev/drbdN
+    # * /dev/vg/a-b-c-d.disk0
+    # For the first two, the mapped device becomes e.g. /dev/mapper/drbdNpN.
+    # For the latter, the mapped device becomes /dev/mapper/vg-a--b--c--d.disk0pN.
+
+    local mappedname="$($KPARTX -l $TARGET_DEVICE | awk '{ print $1 }' | grep -m 1 "p${part}$")"
+    echo "/dev/mapper/${mappedname}"
 }
 
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
