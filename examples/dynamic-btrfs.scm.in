@@ -25,9 +25,9 @@
               (options "subvol=system-root/var/log"))
             (file-system
               (device (file-system-label mylabel))
-              (mount-point "/var/lib/mysql")
+              (mount-point "/var/lib")
               (type "btrfs")
-              (options "subvol=system-root/var/lib/mysql"))
+              (options "subvol=system-root/var/lib"))
             (file-system
               (device (file-system-label mylabel))
               (mount-point "/home")

@@ -156,10 +156,9 @@ create_filesystems(){
         # Setup additional subvolumes
         mkdir -p "$BTRFS_ROOT/gnu"
         mkdir -p "$BTRFS_ROOT/var"
-        mkdir -p "$BTRFS_ROOT/var/lib"
         "${BTRFS}" subvolume create "$BTRFS_ROOT/gnu/store"
+        "${BTRFS}" subvolume create "$BTRFS_ROOT/var/lib"
         "${BTRFS}" subvolume create "$BTRFS_ROOT/var/log"
-        "${BTRFS}" subvolume create "$BTRFS_ROOT/var/lib/mysql"
         "${BTRFS}" subvolume create "$BTRFS_ROOT/home"
         umount "$TARGET_ROOT"
     elif [[ "$LAYOUT" == basic ]] && [[ "$FS_TYPE" == btrfs ]]; then
@@ -184,15 +183,15 @@ create_filesystems(){
         CLEANUP+=("${VGCHANGE} -an ${INSTANCE_NAME}_vg01")
         ROOT_SIZE='-l 10%VG'
         HOME_SIZE='-l 10%VG'
-        GNU_STORE_SIZE='-l 55%VG'
+        GNU_STORE_SIZE='-l 45%VG'
         VAR_LOG_SIZE='-l 10%VG'
-        VAR_LIB_MYSQL_SIZE='-l 10%VG'
+        VAR_LIB_SIZE='-l 20%VG'
         SWAP_SIZE='-l 100%FREE'
         "${LVCREATE}" --yes -n lv_root $ROOT_SIZE -W y "$INSTANCE_NAME"_vg01
         "${LVCREATE}" --yes -n lv_home $HOME_SIZE -W y "$INSTANCE_NAME"_vg01
         "${LVCREATE}" --yes -n lv_gnu_store $GNU_STORE_SIZE -W y "$INSTANCE_NAME"_vg01
         "${LVCREATE}" --yes -n lv_var_log $VAR_LOG_SIZE -W y "$INSTANCE_NAME"_vg01
-        "${LVCREATE}" --yes -n lv_var_lib_mysql $VAR_LIB_MYSQL_SIZE -W y "$INSTANCE_NAME"_vg01
+        "${LVCREATE}" --yes -n lv_var_lib $VAR_LIB_SIZE -W y "$INSTANCE_NAME"_vg01
         "${LVCREATE}" --yes -n lv_swap $SWAP_SIZE -W y "$INSTANCE_NAME"_vg01
         # -f (force) is needed if reinstalling and previous
         # logical-volume also was a swap volume and still has that
@@ -202,7 +201,7 @@ create_filesystems(){
                     /dev/"$INSTANCE_NAME"_vg01/lv_swap
         log Creating "$FS_TYPE" filesystems on logical volumes \
             of "$INSTANCE_NAME"_vg01 of "$TARGET_DEV_PART2"
-        for lv in lv_root lv_home lv_gnu_store lv_var_log lv_var_lib_mysql; do
+        for lv in lv_root lv_home lv_gnu_store lv_var_log lv_var_lib; do
             "$MKFS_CMD" "/dev/${INSTANCE_NAME}_vg01/${lv}" || {
                 log Failed to mkfs."$FS_TYPE" on /dev/"${INSTANCE_NAME}_vg01/$lv"
                 return 1
@@ -242,7 +241,7 @@ prep_init_mount_point(){
                 of "$TARGET_DEV_PART2"
             mount "/dev/${INSTANCE_NAME}_vg01/lv_root" "$TARGET_ROOT"
             CLEANUP+=("umount $TARGET_ROOT")
-            for lv in lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib_mysql; do
+            for lv in lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib; do
                 lv="${lv#lv_}"
                 mkdir -p "$TARGET_ROOT"/"${lv//_/\/}" >&2
                 if [[ ! "$lv" == swap ]]; then
