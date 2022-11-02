@@ -122,10 +122,14 @@ create_filesystems(){
     eval MKFS_CMD=\$"MKFS_$(echo "$FS_TYPE" | tr '[:lower:]' '[:upper:]')"
 
     if [[ "$LAYOUT" == basic ]]; then
-        "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2" || {
-            log Failed to mkfs."$FS_TYPE" on "$TARGET_DEV_PART2"
-            return 1
-        }
+        case "$FS_TYPE" in
+            f2fs)
+                "${MKFS_CMD}" -l "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2"
+                ;;
+            *)
+                "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2"
+                ;;
+        esac
     elif [[ "$FS_TYPE" == btrfs ]]; then
         command -v "${BTRFS}" || {
             log "btrfs requested but not installed"

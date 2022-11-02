@@ -34,6 +34,7 @@ do_subst = $(SED) \
 	-e 's,[@]PARTED[@],$(PARTED),g' \
 	-e 's,[@]BTRFS[@],$(BTRFS),g' \
 	-e 's,[@]MKFS_BTRFS[@],$(MKFS_BTRFS),g' \
+	-e 's,[@]MKFS_F2FS[@],$(MKFS_F2FS),g' \
 	-e 's,[@]MKFS_XFS[@],$(MKFS_XFS),g' \
 	-e 's,[@]MKFS_EXT2[@],$(MKFS_EXT2),g' \
 	-e 's,[@]MKFS_EXT3[@],$(MKFS_EXT3),g' \

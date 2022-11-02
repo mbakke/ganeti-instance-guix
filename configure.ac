@@ -102,6 +102,7 @@ AC_ARG_VAR(BTRFS, [btrfs path])
 AC_PATH_PROG(BTRFS, [btrfs], btrfs)
 
 AC_PATH_PROG(MKFS_BTRFS, [mkfs.btrfs], mkfs.btrfs)
+AC_PATH_PROG(MKFS_F2FS, [mkfs.f2fs], mkfs.f2fs)
 AC_PATH_PROG(MKFS_XFS, [mkfs.xfs], mkfs.xfs)
 AC_PATH_PROG(MKFS_EXT2, [mkfs.ext2], mkfs.ext2)
 AC_PATH_PROG(MKFS_EXT3, [mkfs.ext3], mkfs.ext3)
