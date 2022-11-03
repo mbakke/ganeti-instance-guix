@@ -73,7 +73,7 @@ case "${OSP_FILESYSTEM}" in
 esac
 
 case "${OSP_LAYOUT}" in
-  ""|basic|standard)
+  ""|basic|advanced)
       ;;
   *)
     echo "Invalid value '$OSP_LAYOUT' for the layout parameter" 1>&2

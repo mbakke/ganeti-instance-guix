@@ -172,7 +172,7 @@ create_filesystems(){
         "${BTRFS}" subvolume create "$BTRFS_ROOT/var/log"
         "${BTRFS}" subvolume create "$BTRFS_ROOT/home"
         "$UMOUNT" "$TARGET_ROOT"
-    elif [[ "$LAYOUT" == standard ]]; then
+    elif [[ "$LAYOUT" == "advanced" ]]; then
         # Assume LVM.
         command -v "${PVCREATE}" || {
             log "LVM requested but lvm2 is not available"
@@ -235,11 +235,11 @@ prep_init_mount_point(){
         CLEANUP+=("$UMOUNT $TARGET_ROOT")
     else
         if [[ "$FS_TYPE" == "btrfs" ]]; then
-            # The standard btrfs layout uses a system-root subvolume.
+            # The advanced btrfs layout uses a system-root subvolume.
             "$MOUNT" -o "subvol=system-root" "$TARGET_DEV_PART2" "$TARGET_ROOT"
             CLEANUP+=("$UMOUNT $TARGET_ROOT")
         else
-            # The standard layout for non-btrfs filesystems is setup with LVM
+            # The advanced layout for non-btrfs filesystems is setup with LVM
             log Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 \
                 of "$TARGET_DEV_PART2"
             "$MOUNT" "/dev/${INSTANCE_NAME}_vg01/lv_root" "$TARGET_ROOT"
@@ -285,7 +285,7 @@ main(){
     # NIC_0_NETWORK_SUBNET=1.2.3.4/24 \
     # NIC_0_NETWORK_GATEWAY=1.2.3.1 \
     # TARGET_DEVICE=/dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0 \
-    # OSP_LAYOUT=standard OSP_FILESYSTEM=xfs \
+    # OSP_LAYOUT=advanced OSP_FILESYSTEM=xfs \
     # OSP_VARIANT_CONFIG=$(pwd)/examples/dynamic-lvm.scm \
     # ./create
     local DEFAULT_VARIANT_CONFIG="${EXAMPLEDIR}/dynamic.scm"
