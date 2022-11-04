@@ -39,9 +39,13 @@ do_subst = sed \
 	-e 's,[@]KPARTX[@],$(KPARTX),g' \
 	-e 's,[@]PVCREATE[@],$(PVCREATE),g' \
 	-e 's,[@]VGCREATE[@],$(VGCREATE),g' \
+	-e 's,[@]VGCREATE[@],$(VGCHANGE),g' \
 	-e 's,[@]VGREMOVE[@],$(VGREMOVE),g' \
 	-e 's,[@]LVCREATE[@],$(LVCREATE),g' \
-	-e 's,[@]LOSETUP[@],$(LOSETUP),g'
+	-e 's,[@]LOSETUP[@],$(LOSETUP),g' \
+	-e 's,[@]LSBLK[@],$(LSBLK),g' \
+	-e 's,[@]BLKID[@],$(BLKID),g' \
+	-e 's,[@]CRYPTSETUP[@],$(CRYPTSETUP),g'
 
 common.sh: common.sh.in Makefile
 	$(do_subst) < $< > $@

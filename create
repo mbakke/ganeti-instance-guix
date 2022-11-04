@@ -70,23 +70,38 @@ guix_setup(){
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
 partition_disk(){
     local TARGET_DEVICE="$1"
-
-    echo Starting partitioning on "$TARGET_DEVICE" >&2
+    local LUKS_PASSPHRASE="$2"
+    local SIZE_PART_2="$3"
+    #set -x
+    log Starting partitioning on "$TARGET_DEVICE"
 
     # If this is a reinstallation, the second partition may contain a
-    # mounted filesystem that needs unmounted to proceed.
-    if "$UMOUNT" -R "$TARGET_DEVICE"p2 2>/dev/null; then echo successfully unmounted "$TARGET_DEVICE"p2 ; fi
+    # mounted filesystem that needs unmounted to proceed.  If part2 is
+    # a luks partition, then find it's /dev/mapper/<part> path, and
+    # ensure that is unmounted.
+    mapfile -t Parts < <("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[].node?");
+    if "${CRYPTSETUP}" isLuks "${Parts[1]}" &>/dev/null; then
+	local TARGET_PART="/dev/mapper/$("${LSBLK}" --json "${Parts[1]}" | "${JQ}" -r '.blockdevices[].children[0].name?')"
+    else
+	local TARGET_PART="${Parts[1]}"
+    fi
+    if "$UMOUNT" -R "${TARGET_PART}" 2>/dev/null; then
+	log successfully unmounted "${TARGET_PART}"
+    fi
 
     # Wipe any previous filesystems in case this is a reinstallation
-    echo Wiping any previous filesystems on "$TARGET_DEVICE" >&2
+    log Wiping any previous filesystems on "$TARGET_DEVICE"
 
+    if "${WIPEFS}" -a "$TARGET_PART" &>/dev/null; then log successfully wiped "$TARGET_PART" ; fi
+    if "${VGREMOVE}" -y "$INSTANCE_NAME"_vg01 &>/dev/null; then log successfully removed LVM Volume Group "$INSTANCE_NAME"_vg01 ; fi
+    # ----DEPRECATED----    
     # the naming of the partitions may vary some, thus we allow
     # failing to wipe the partitions
-    if "${VGREMOVE}" -y "$INSTANCE_NAME"_vg01 2>/dev/null; then echo successfully removed LVM Volume Group "$INSTANCE_NAME"_vg01 ; fi
-    if "${WIPEFS}" -a "$TARGET_DEVICE"p[1-9]* &>/dev/null; then echo successfully wiped "$TARGET_DEVICE"p[1-9]* ; fi
-    if "${WIPEFS}" -a "$TARGET_DEVICE"[1-9]* &>/dev/null; then echo successfully wiped "$TARGET_DEVICE"[1-9]* ; fi
-    if "${KPARTX}" -d "$TARGET_DEVICE" 2>/dev/null; then echo successfully deleted partition device mappings of "$TARGET_DEVICE"; fi
-
+    # if "${WIPEFS}" -a "$TARGET_DEVICE"p[1-9]* &>/dev/null; then echo successfully wiped "$TARGET_DEVICE"p[1-9]* ; fi
+    # if "${WIPEFS}" -a "$TARGET_DEVICE"[1-9]* &>/dev/null; then echo successfully wiped "$TARGET_DEVICE"[1-9]* ; fi
+    # -------END--------    
+    if "${KPARTX}" -d "$TARGET_DEVICE" &>/dev/null; then log successfully deleted partition device mappings of "$TARGET_DEVICE"; fi
+       
     # It has happened that some VM has kernel panicked due to first
     # sectors not being properly wiped, and writing some random stuff
     # there has solved it:
@@ -95,16 +110,54 @@ partition_disk(){
     # Create bios_grub partition and offset so it's easy to use either
     # of MBR or GPT or to switch between them.
     # https://www.gnu.org/software/grub/manual/grub/html_node/BIOS-installation.html#BIOS-installation
-    echo Creating 2 partitions on "$TARGET_DEVICE" >&2
-    "${PARTED}" --script "$TARGET_DEVICE" \
-    mklabel gpt \
-    mkpart primary 1MiB 3MiB \
-    mkpart primary 3MiB 100% \
-    set 1 bios_grub on
-    [[ "$?" == 0 ]] || {
-        echo Failed to partition "$TARGET_DEVICE" >&2
-        return 1
-    }
+    # If part2 should have a size limit, then use that for the second partition.
+    log Creating 2 partitions on "$TARGET_DEVICE"
+    if [[ -n "${SIZE_PART_2}" ]]; then
+	"${PARTED}" --script "$TARGET_DEVICE" \
+	       mklabel gpt \
+	       mkpart primary 1MiB 3MiB \
+	       mkpart primary "$SIZE_PART_2" \
+	       set 1 bios_grub on &>/dev/null
+	[[ "$?" == 0 ]] || {
+            log Failed to partition "$TARGET_DEVICE" with size "${SIZE_PART_2}" for the second partition
+            return 1
+	}	
+    else
+	"${PARTED}" --script "$TARGET_DEVICE" \
+	       mklabel gpt \
+	       mkpart primary 1MiB 3MiB \
+	       mkpart primary 3MiB 100% \
+	       set 1 bios_grub on &>/dev/null
+	[[ "$?" == 0 ]] || {
+            log Failed to partition "$TARGET_DEVICE"
+            return 1
+	}
+    fi
+    log Done creating 2 partitions. Checking for LUKS.
+    # If luks, then luks-encrypt the target partition
+    local TARGET_PART_NEW=$("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | jq -r ".partitiontable.partitions[1].node")
+    log TARGET_PART_NEW="$TARGET_PART_NEW"
+    if [[ -n "${LUKS_PASSPHRASE}" ]]; then
+	log LUKS passphrase is set. Starting LUKS formatting.
+	if "${CRYPTSETUP}" luksClose "${TARGET_PART_NEW##*/}"_mapped &>/dev/null; then
+	    log closed luks device mapping "${TARGET_PART_NEW##*/}"_mapped; fi
+	if printf '%s' "$LUKS_PASSPHRASE" | "${CRYPTSETUP}" luksFormat --type=luks1 --key-file - "${TARGET_PART_NEW}" &>/dev/null; then
+	    log Successfully luksformatted "${TARGET_PART_NEW}"
+	else
+	    log Failed to luksformat "${TARGET_PART_NEW}"
+	    return 1
+	fi
+	#if printf '%s' "$LUKS_PASSPHRASE" | "${CRYPTSETUP}" luksOpen --key-file - "${TARGET_PART_NEW}" test-system_mapped &>/dev/null; then	
+	if printf '%s' "$LUKS_PASSPHRASE" | "${CRYPTSETUP}" luksOpen --key-file - "${TARGET_PART_NEW}" "${TARGET_PART_NEW##*/}"_mapped &>/dev/null; then
+	    log Successfully mapped "${TARGET_PART_NEW}" to "${TARGET_PART_NEW##*/}"_mapped
+	    printf '%s' "/dev/mapper/$("${LSBLK}" --json "${Parts[1]}" | "${JQ}" -r .blockdevices[0].children[0].name)"
+	    return 0
+	else
+	    log Failed to map "${TARGET_PART_NEW}" to "${TARGET_PART_NEW##*/}"_mapped
+	    return 1
+	fi
+    fi
+    printf '%s' "${TARGET_PART_NEW}"
 }
 
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
@@ -132,13 +185,13 @@ find_uuid(){
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
 create_filesystems(){
     local TARGET_DEVICE="$1"
-    local FS_TYPE="$2"
-    local LAYOUT="$3"
+    local TARGET_PARTITION="$2"
+    local FS_TYPE="$3"
+    local LAYOUT="$4"
     local SWAP_SPACE=4G
 
-    # Find the second partitions filepaths':
-    local TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
-
+    local TARGET_DEV_PART2="$TARGET_PARTITION"
+    
     if [[ "$LAYOUT" == standard ]] && [[ "$FS_TYPE" == btrfs ]]; then
 	echo Creating btrfs filesystem on second partition of "$TARGET_DEVICE" >&2
 	mkfs.btrfs -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
@@ -148,7 +201,7 @@ create_filesystems(){
 
 	# Mount and create root filesystem
 	local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
-	mount "$TARGET_DEV_PART2" "$TEMPDIR" || {
+	"${MOUNT}" "$TARGET_DEV_PART2" "$TEMPDIR" || {
             echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
 	    rmdir "$TEMPDIR"
 	    return 1
@@ -213,8 +266,8 @@ create_filesystems(){
 	"${MKSWAP}" -f --label "$INSTANCE_NAME"-swap /dev/"$INSTANCE_NAME"_vg01/lv_swap
 	echo Creating "$FS_TYPE" filesystems on logical volumes of "$INSTANCE_NAME"_vg01 of "$TARGET_DEV_PART2" >&2
 	for lv in lv_root lv_home lv_gnu_store lv_var_log lv_var_lib_mysql; do
-	    mkfs."$FS_TYPE" "/dev/${INSTANCE_NAME}_vg01/${lv}" || {
-		echo Failed to mkfs."$FS_TYPE" on /dev/"${INSTANCE_NAME}_vg01/$lv" >&2
+	    mkfs."$FS_TYPE" -L "${INSTANCE_NAME}"-system "/dev/${INSTANCE_NAME}_vg01/${lv}" || {
+		echo Failed to mkfs."$FS_TYPE" -L "${INSTANCE_NAME}"-system on /dev/"${INSTANCE_NAME}_vg01/$lv" >&2
 		return 1
 	    }
 	done
@@ -226,19 +279,21 @@ create_filesystems(){
 
 prep_init_mount_point(){
     local TARGET_DEVICE="$1"
-    local GUIX_CONFIG="$2"
-    local FS_TYPE="$3"
-    local LAYOUT="$4"
+    local TARGET_PARTITION="$2"
+    local GUIX_CONFIG="$3"
+    local FS_TYPE="$4"
+    local LAYOUT="$5"
+    local LUKS_UUID="$6"
     local TEMPDIR=$(mktemp -d /tmp/mnt_XXXXXX )
     echo Initializing guix on second partition of "$TARGET_DEVICE" using config "$GUIX_CONFIG" >&2
 
-    # Assume there's a partition 1 for boot and find the second
-    # partition's filepath. If FS_TYPE is btrfs we can just mount it,
-    # else we assume second partition is an LVM partition and we must
-    # mount logical volumes instead:
-    local TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
+    local TARGET_DEV_PART2="$TARGET_PARTITION"
+    
+    # If FS_TYPE is btrfs we can just mount it, else we assume second
+    # partition is an LVM partition and we must mount logical volumes
+    # instead:
     if [[ "$FS_TYPE" == "btrfs" ]]; then
-	mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
+	"${MOUNT}" "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
             echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
 	    rmdir "$TEMPDIR"
 	    return 1
@@ -261,14 +316,14 @@ prep_init_mount_point(){
 		mkdir -p "$TEMPDIR"/"${lv//_/\/}" >&2
 		if [[ ! "$lv" == swap ]]; then
 		    echo running: mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2
-		    mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2 || {
+		    "${MOUNT}" "/dev/${INSTANCE_NAME}_vg01/lv_${lv:-root}" "$TEMPDIR"/"${lv//_/\/}" >&2 || {
 			echo Failed to mount "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" on "$TEMPDIR"/"${lv//_/\/}" >&2
 			return 1
 		    }
 		fi
 	    done
 	elif [[ "$LAYOUT" == basic ]]; then
-	    mount "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
+	    "${MOUNT}" "$TARGET_DEV_PART2" "$TEMPDIR" >&2 || {
 		echo Failed to mount "$TARGET_DEV_PART2" onto "$TEMPDIR" >&2
 		rmdir "$TEMPDIR"
 		return 1
@@ -288,6 +343,7 @@ prep_init_mount_point(){
     printf '%s\n' NIC_0_NETWORK_GATEWAY="$NIC_0_NETWORK_GATEWAY" >> "$TARGET_ETC"/config.env
     printf '%s\n' NIC_0_IP="$NIC_0_IP" >> "$TARGET_ETC"/config.env
     printf '%s\n' FS_TYPE="$FS_TYPE" >> "$TARGET_ETC"/config.env
+    printf '%s\n' LUKS_UUID="$LUKS_UUID" >> "$TARGET_ETC"/config.env
     guix describe --format=json | "${JQ}" -r '"GUIX_COMMIT=" + .[].commit' >> "$TARGET_ETC"/config.env
     cat "$(dirname "$(readlink -f "${GUIX_CONFIG}")")"/config-base.scm > "$TARGET_ETC"/config-base.scm
     printf "$TARGET_ROOT"
@@ -303,15 +359,14 @@ initialize_guix(){
     # Install GuixSD
     $GUIX init "$GUIX_CONFIG" "$TARGET_ROOT" || {
         echo Failed to guix system init "$GUIX_CONFIG" "$TARGET_ROOT" >&2
-	umount "$TEMPDIR"
-	rmdir "$TEMPDIR"
+	"${UMOUNT}" -R "$TARGET_ROOT"
+	rmdir "$TARGET_ROOT"
 	return 1
     }
     if umount -R "${TARGET_ROOT}" 2>/dev/null; then echo Recursively unmounted "$TARGET_ROOT"; fi
     if umount -R "${TARGET_ROOT%/system-root}" 2>/dev/null; then echo Recursively unmounted "${TARGET_ROOT%/system-root}"; fi
 
     rmdir "${TARGET_ROOT%/system-root}"
-    "${KPARTX}" -d "$TARGET_DEVICE"
 }
 
 main(){
@@ -319,18 +374,21 @@ main(){
     # available.
     verify_dependencies
 
-    # for testing, run (replace value of TARGET_DEVICE etc. as needed):
+    # for testing, comment . ./common.sh above and then run (replace
+    # value of TARGET_DEVICE etc. as needed):
     # INSTANCE_NAME=testinstance \
     # NIC_0_IP=1.2.3.4 \
     # NIC_0_NETWORK_SUBNET=1.2.3.4/24 \
     # NIC_0_NETWORK_GATEWAY=1.2.3.1 \
-    # TARGET_DEVICE=/dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0 \
+    # DISK_COUNT=1 \
+    # DISK_0_PATH=/dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0 \
     # OSP_LAYOUT=standard OSP_FILESYSTEM=xfs \
     # OSP_VARIANT_CONFIG=$(pwd)/examples/dynamic-lvm.scm \
     # ./create
     local DEFAULT_VARIANT_CONFIG="$(dirname $(readlink -f "${BASH_SOURCE[0]}"))/examples/dynamic.scm"
     local VARIANT_CONFIG="${VARIANT_CONFIG:-$DEFAULT_VARIANT_CONFIG}"
     echo Running with options set to:
+    echo INSTANCE_NAME: "${INSTANCE_NAME}"
     echo TARGET_DEVICE: "${TARGET_DEVICE}"
     echo OSP_FILESYSTEM: "${OSP_FILESYSTEM:-ext4}"
     echo OSP_LAYOUT: "${OSP_LAYOUT:-basic}"
@@ -355,6 +413,39 @@ main(){
     # it isn't (for example when using a file disk):
     if [[ ! -b "$TARGET_DEVICE" ]]; then
 	local TARGET_DEVICE_ORIG="$TARGET_DEVICE"
+
+	# Find and remove current loop mappings first if needed:
+	local -a LoopMappings
+	mapfile -t LoopMappings < <("${LOSETUP}" -J -l | "${JQ}" -r ".loopdevices[]|select(.\"back-file\" == \"${TARGET_DEVICE}\")|.name")
+	local loopdev
+	for loopdev in "${LoopMappings[@]}"; do
+	    # TODO: find unmount any mounted filesystems
+	    
+	    # Remove/deactivate any lvm for the instance
+	    if "${VGREMOVE}" -y "$INSTANCE_NAME"_vg01 &>/dev/null; then log successfully removed LVM Volume Group "$INSTANCE_NAME"_vg01 ; fi
+	    
+	    # Remove luks mappings first if those exist
+	    local -a LuksMappings
+	    mapfile -t LuksMappings < <("${LSBLK}" --json "$loopdev" | "${JQ}" -r ".blockdevices[]|select(.name == \"${loopdev##*/}\").children[]?.children[]?|select(.type == \"crypt\").name")
+	    for luksmapping in "${LuksMappings[@]}"; do
+		if "${CRYPTSETUP}" luksClose "$luksmapping"; then
+		    log unmapped luksmapping "$luksmapping" of loopdev "$loopdev" from backing file "$TARGET_DEVICE";
+		else
+		    log failed to unmap luksmapping "$luksmapping" of loopdev "$loopdev" from backing file "$TARGET_DEVICE";
+		    return 1
+		fi
+	    done
+
+	    # Now unmap the loop device
+	    if "${LOSETUP}" -d "$loopdev"; then
+		log unmapped loopdev "$loopdev" from backing file "$TARGET_DEVICE";
+	    else
+		log failed to unmap existing loop device mapping for TARGET_DEVICE: "$TARGET_DEVICE"
+		return 1
+	    fi
+	done
+
+	# Attempt to map the file disk to a loop device
 	if ! TARGET_DEVICE=$("${LOSETUP}" --show -f "$TARGET_DEVICE"); then
 	    echo Failed to "${LOSETUP}" "$TARGET_DEVICE_ORIG" >&2
 	    return 1
@@ -370,18 +461,57 @@ main(){
     $GUIX_COMMAND --version
 
     # A basic 2 partitions setup.
-    partition_disk "$TARGET_DEVICE"
+    local TARGET_PARTITION="$(partition_disk "$TARGET_DEVICE" "${LUKS_PASSPHRASE}" "$PART_SIZE")"
+    log DONE PARTITIONING. TARGET_PARTITION set to "$TARGET_PARTITION"
 
     # Each filesystem and layout option combination is handled in the
     # create_filesystems function. This will possibly setup lvm based
     # on the OSP options.
-    create_filesystems "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
+    create_filesystems "$TARGET_DEVICE" "$TARGET_PARTITION" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
+    log DONE CREATING FILESYSTEMS
 
-    # Prep the mount point to initialize guix on and then initialize guix.
-    local MOUNT_POINT=$(prep_init_mount_point "$TARGET_DEVICE" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}")
+    # Prep the mount point to initialize guix
+    mapfile -t Parts < <("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[].node?");
+    export LUKS_UUID="$("${BLKID}" -s UUID -o value "${Parts[1]}")"
+    export LVM_UUID="$("${BLKID}" -s UUID -o value "${TARGET_PARTITION}")"
+    if [[ -n "$LUKS_PASSPHRASE" ]]; then
+	log LUKS_UUID="$LUKS_UUID"; fi
+    if [[ "${OSP_LAYOUT}" == standard ]] && [[ ! "${FS_TYPE}" == btrfs ]]; then
+	log LVM_UUID="$LVM_UUID"; fi
+    local MOUNT_POINT="$(prep_init_mount_point "$TARGET_DEVICE" "$TARGET_PARTITION" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}" "${LUKS_UUID}")"
+
+    # Initialize/install Guix!
+    log Guix will now be initialized on MOUNT_POINT="$MOUNT_POINT"
+
+    # The LVM_UUID variable is only needed when using luks. Since
+    # TARGET_PARTITION will generally refer to
+    # /dev/mapper/loop0p2_mapped if we are using luks, we need to find
+    # the UUID of just the second partition of the TARGET_DEVICE
     initialize_guix "$VARIANT_CONFIG" "$MOUNT_POINT" "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "$GUIX_COMMAND"
 
+    # Deactivate lvm if needed
+    if "${VGCHANGE}" "$INSTANCE_NAME"_vg01 -an &>/dev/null; then
+	log Successfully deactivated lvm volume group "$INSTANCE_NAME"_vg01
+    else
+	log Warning: failed to deactivate lvm volume group "$INSTANCE_NAME"_vg01
+    fi
+    # Close luks if needed (must have lvm deactivated)
+    if [[ -n "$LUKS_PASSPHRASE" ]]; then
+    #if "${CRYPTSETUP}" isLuks "$TARGET_PARTITION" &>/dev/null; then
+	if "${CRYPTSETUP}" luksClose "${TARGET_PARTITION##*/}" &>/dev/null; then
+	    log Successfully closed luks mapping for "${TARGET_PARTITION##*/}"
+	else
+	    log Failed to close luks mapping for "${TARGET_PARTITION##*/}"
+	    return 1
+	fi
+    fi
+    
     # Undo the losetup if needed.
-    if [[ ! -b "$TARGET_DEVICE_ORIG" ]]; then "${LOSETUP}" -d "$TARGET_DEVICE"; fi
+    if [[ ! -b "$TARGET_DEVICE_ORIG" ]]; then
+	"${LOSETUP}" -d "$TARGET_DEVICE"; fi
+
+    # remove partition mapping
+    "${KPARTX}" -d "$TARGET_DEVICE"
+
 }
 [[ "$1" == '--source-only' ]] || main "$@"

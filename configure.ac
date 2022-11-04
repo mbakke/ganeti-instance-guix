@@ -139,39 +139,67 @@ then
   AC_MSG_ERROR([kpartx not found, please install multipath-tools])
 fi
 
-AC_ARG_VAR(PVCREATE, [pvcreate path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_ARG_VAR(PVCREATE, [pvcreate path])
 AC_PATH_PROG(PVCREATE, [pvcreate])
 if test -z "$PVCREATE"
 then
   AC_MSG_ERROR([pvcreate not found, please install lvm2])
 fi
 
-AC_ARG_VAR(VGCREATE, [vgcreate path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_ARG_VAR(VGCREATE, [vgcreate path])
 AC_PATH_PROG(VGCREATE, [vgcreate])
 if test -z "$VGCREATE"
 then
   AC_MSG_ERROR([vgcreate not found, please install lvm2])
 fi
 
-AC_ARG_VAR(VGREMOVE, [vgremove path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_ARG_VAR(VGREMOVE, [vgremove path])
 AC_PATH_PROG(VGREMOVE, [vgremove])
 if test -z "$VGREMOVE"
 then
   AC_MSG_ERROR([vgremove not found, please install lvm2])
 fi
 
-AC_ARG_VAR(LVCREATE, [lvcreate path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_ARG_VAR(VGCHANGE, [vgchange path])
+AC_PATH_PROG(VGCHANGE, [vgchange])
+if test -z "$VGCHANGE"
+then
+  AC_MSG_ERROR([vgchange not found, please install lvm2])
+fi
+
+AC_ARG_VAR(LVCREATE, [lvcreate path])
 AC_PATH_PROG(LVCREATE, [lvcreate])
 if test -z "$LVCREATE"
 then
   AC_MSG_ERROR([lvcreate not found, please install lvm2])
 fi
 
-AC_ARG_VAR(LOSETUP, [losetup path]) # this covers pvcreate, vgcreate, vgremove and lvcreate
+AC_ARG_VAR(LOSETUP, [losetup path])
 AC_PATH_PROG(LOSETUP, [losetup])
 if test -z "$LOSETUP"
 then
   AC_MSG_ERROR([losetup not found, please install lvm2])
+fi
+
+AC_ARG_VAR(LSBLK, [lsblk path])
+AC_PATH_PROG(LSBLK, [lsblk])
+if test -z "$LSBLK"
+then
+  AC_MSG_ERROR([lsblk not found, please install util-linux-with-udev])
+fi
+
+AC_ARG_VAR(BLKID, [blkid path])
+AC_PATH_PROG(BLKID, [blkid])
+if test -z "$BLKID"
+then
+  AC_MSG_ERROR([blkid not found, please install util-linux-with-udev])
+fi
+
+AC_ARG_VAR(CRYPTSETUP, [cryptsetup path])
+AC_PATH_PROG(CRYPTSETUP, [cryptsetup])
+if test -z "$CRYPTSETUP"
+then
+  AC_MSG_ERROR([cryptsetup not found, please install cryptsetup])
 fi
 
 AC_CONFIG_FILES([ Makefile ])

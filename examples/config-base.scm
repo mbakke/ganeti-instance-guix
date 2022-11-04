@@ -4,7 +4,7 @@
 	     (ice-9 textual-ports)
 	     (guix build utils)
              (rnrs io ports))
-(use-package-modules certs screen linux)
+(use-package-modules certs screen linux cryptsetup)
 (use-service-modules networking ssh sysctl)
 
 (let ((envfile (string-append (dirname (current-filename)) "/config.env")))
@@ -40,8 +40,10 @@
                   (get-string-all port)))
               #\newline))
    (locale "en_US.utf8")
-   
-   (kernel-arguments '("console=ttyS0"))
+
+   ;; Add ttyS0 for gnt-instance console <myinstance> and tty0 for
+   ;; virt-viewer/remote-viewer (needed for entering LUKS-password)
+   (kernel-arguments '("console=ttyS0" "console=tty0"))
 
    ;; Boot in "legacy" BIOS mode, assuming /dev/sdX is the
    ;; target hard disk
@@ -64,7 +66,7 @@
    (users %base-user-accounts)
 
    ;; Globally-installed packages.
-   (packages (cons* lvm2 screen nss-certs le-certs btrfs-progs xfsprogs %base-packages))
+   (packages (cons* cryptsetup lvm2 screen nss-certs le-certs btrfs-progs xfsprogs %base-packages))
 
    ;; Add services to the baseline
    (services

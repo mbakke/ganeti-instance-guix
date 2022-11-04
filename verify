@@ -80,5 +80,9 @@ case "${OSP_LAYOUT}" in
     ;;
 esac
 
+# TODO: throw error so that INSTANCE_NAME + "-system" do not exceed 12 characters total, which is an xfs file-system limitation
+
+# TODO: check luks passphrase so it does not contain for example newlines.
+
 exit 0
 

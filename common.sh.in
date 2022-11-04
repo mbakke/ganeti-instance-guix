@@ -23,6 +23,7 @@ BLOCKDEV=@BLOCKDEV@
 GUIX=@GUIX@
 
 # external programs
+CRYPTSETUP=@CRYPTSETUP@
 MOUNT=@MOUNT@
 UMOUNT=@UMOUNT@
 WIPEFS=@WIPEFS@
@@ -36,9 +37,12 @@ SFDISK=@SFDISK@
 KPARTX=@KPARTX@
 PVCREATE=@PVCREATE@
 VGCREATE=@VGCREATE@
+VGCHANGE=@VGCHANGE@
 VGREMOVE=@VGREMOVE@
 LVCREATE=@LVCREATE@
 LOSETUP=@LOSETUP@
+LSBLK=@LSBLK@
+LSBLK=@BLKID@
 
 CACHE_DIR="@localstatedir@/cache/ganeti-instance-guix"
 GCROOTSDIR=@GCROOTSDIR@
@@ -56,7 +60,7 @@ if [ -n "$OS_VARIANT" ]; then
     fi
 fi
 
-if [ $DISK_COUNT -gt 0 -a -n "$DISK_0_PATH" ]; then
+if [[ $DISK_COUNT -gt 0 ]] && [[ -n "$DISK_0_PATH" ]]; then
     TARGET_DEVICE=$DISK_0_PATH
 else
     log "At least one disk is needed."
