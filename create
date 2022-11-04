@@ -176,10 +176,13 @@ create_filesystems(){
     if [[ "$LAYOUT" == basic ]]; then
         case "$FS_TYPE" in
             f2fs)
-                "${MKFS_CMD}" -l "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2"
+                "${MKFS_CMD}" -l "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2"
+                ;;
+            ext*)
+                "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -F "$TARGET_DEV_PART2"
                 ;;
             *)
-                "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" "$TARGET_DEV_PART2"
+                "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2"
                 ;;
         esac
     elif [[ "$FS_TYPE" == btrfs ]]; then
