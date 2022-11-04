@@ -77,11 +77,32 @@ then
   AC_MSG_ERROR([mkswap not found, please install util-linux])
 fi
 
+AC_ARG_VAR(LSBLK, [lsblk path])
+AC_PATH_PROG(LSBLK, [lsblk])
+if test -z "$LSBLK"
+then
+  AC_MSG_ERROR([lsblk not found, please install util-linux])
+fi
+
+AC_ARG_VAR(BLKID, [blkid path])
+AC_PATH_PROG(BLKID, [blkid])
+if test -z "$BLKID"
+then
+  AC_MSG_ERROR([blkid not found, please install util-linux])
+fi
+
 AC_ARG_VAR(LOSETUP, [losetup path])
 AC_PATH_PROG(LOSETUP, [losetup])
 if test -z "$LOSETUP"
 then
   AC_MSG_ERROR([losetup not found])
+fi
+
+AC_ARG_VAR(SFDISK, [sfdisk path])
+AC_PATH_PROG(SFDISK, [sfdisk])
+if test -z "$SFDISK"
+then
+  AC_MSG_ERROR([sfdisk not found])
 fi
 
 AC_ARG_VAR(CHATTR, [chattr path]) # e2fsprogs also covers mkfs.ext{2,3,4}
@@ -90,6 +111,14 @@ if test -z "$CHATTR"
 then
   AC_MSG_ERROR([chattr not found, please install e2fsprogs])
 fi
+
+AC_ARG_VAR(JQ, [jq path])
+AC_PATH_PROG(JQ, [jq])
+if test -z "$JQ"
+then
+  AC_MSG_ERROR([jq not found, please install jq])
+fi
+
 
 AC_ARG_VAR(PARTED, [parted path])
 AC_PATH_PROG(PARTED, [parted])
@@ -124,8 +153,18 @@ AC_PATH_PROG(VGCREATE, [vgcreate], vgcreate)
 AC_ARG_VAR(VGCHANGE, [vgchange path])
 AC_PATH_PROG(VGCHANGE, [vgchange], vgchange)
 
+AC_ARG_VAR(VGREMOVE, [vgremove path])
+AC_PATH_PROG(VGREMOVE, [vgremove], vgremove)
+
 AC_ARG_VAR(LVCREATE, [lvcreate path])
 AC_PATH_PROG(LVCREATE, [lvcreate], lvcreate)
+
+AC_ARG_VAR(CRYPTSETUP, [cryptsetup path])
+AC_PATH_PROG(CRYPTSETUP, [cryptsetup])
+if test -z "$CRYPTSETUP"
+then
+  AC_MSG_ERROR([cryptsetup not found, please install cryptsetup])
+fi
 
 AC_CONFIG_FILES([ Makefile ])
 

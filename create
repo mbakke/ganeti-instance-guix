@@ -65,8 +65,21 @@ guix_setup(){
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
 partition_disk(){
     local TARGET_DEVICE="$1"
-
+    local LUKS_PASSPHRASE="$2"
+    local SIZE_PART_2="$3"
+    #set -x
     log Starting partitioning on "$TARGET_DEVICE"
+
+    # If this is a reinstallation, the second partition may contain a
+    # mounted filesystem that needs unmounted to proceed.  If part2 is
+    # a luks partition, then find it's /dev/mapper/<part> path, and
+    # ensure that is unmounted.
+    mapfile -t Parts < <("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[].node?");
+    if "${CRYPTSETUP}" isLuks "${Parts[1]}" &>/dev/null; then
+        local TARGET_PART="/dev/mapper/$("${LSBLK}" --json "${Parts[1]}" | "${JQ}" -r '.blockdevices[].children[0].name?')"
+    else
+        local TARGET_PART="${Parts[1]}"
+    fi
 
     # It has happened that some VM has kernel panicked due to first
     # sectors not being properly wiped, and writing some random stuff
@@ -76,16 +89,54 @@ partition_disk(){
     # Create bios_grub partition and offset so it's easy to use either
     # of MBR or GPT or to switch between them.
     # https://www.gnu.org/software/grub/manual/grub/html_node/BIOS-installation.html#BIOS-installation
+    # If part2 should have a size limit, then use that for the second partition.
     log Creating 2 partitions on "$TARGET_DEVICE"
-    "${PARTED}" --script "$TARGET_DEVICE" \
-    mklabel gpt \
-    mkpart primary 1MiB 3MiB \
-    mkpart primary 3MiB 100% \
-    set 1 bios_grub on
-    [[ "$?" == 0 ]] || {
-        log Failed to partition "$TARGET_DEVICE"
-        return 1
-    }
+    if [[ -n "${SIZE_PART_2}" ]]; then
+        "${PARTED}" --script "$TARGET_DEVICE" \
+               mklabel gpt \
+               mkpart primary 1MiB 3MiB \
+               mkpart primary "$SIZE_PART_2" \
+               set 1 bios_grub on &>/dev/null
+        [[ "$?" == 0 ]] || {
+            log Failed to partition "$TARGET_DEVICE" with size "${SIZE_PART_2}" for the second partition
+            return 1
+        }
+    else
+        "${PARTED}" --script "$TARGET_DEVICE" \
+               mklabel gpt \
+               mkpart primary 1MiB 3MiB \
+               mkpart primary 3MiB 100% \
+               set 1 bios_grub on &>/dev/null
+        [[ "$?" == 0 ]] || {
+            log Failed to partition "$TARGET_DEVICE"
+            return 1
+        }
+    fi
+    log Done creating 2 partitions. Checking for LUKS.
+    # If luks, then luks-encrypt the target partition
+    local TARGET_PART_NEW
+    TARGET_PART_NEW=$("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | ${JQ} -r ".partitiontable.partitions[1].node")
+    log TARGET_PART_NEW="$TARGET_PART_NEW"
+    if [[ -n "${LUKS_PASSPHRASE}" ]]; then
+        log LUKS passphrase is set. Starting LUKS formatting.
+        if printf '%s' "$LUKS_PASSPHRASE" | "${CRYPTSETUP}" luksFormat --type=luks1 --key-file - "${TARGET_PART_NEW}" &>/dev/null; then
+            log Successfully luksformatted "${TARGET_PART_NEW}"
+        else
+            log Failed to luksformat "${TARGET_PART_NEW}"
+            return 1
+        fi
+        #if printf '%s' "$LUKS_PASSPHRASE" | "${CRYPTSETUP}" luksOpen --key-file - "${TARGET_PART_NEW}" test-system_mapped &>/dev/null; then
+        if printf '%s' "$LUKS_PASSPHRASE" | "${CRYPTSETUP}" luksOpen --key-file - "${TARGET_PART_NEW}" "${TARGET_PART_NEW##*/}"_mapped &>/dev/null; then
+            log Successfully mapped "${TARGET_PART_NEW}" to "${TARGET_PART_NEW##*/}"_mapped
+
+            CLEANUP+=("${CRYPTSETUP}" luksClose "${TARGET_PARTITION##*/}")
+            printf '%s' "/dev/mapper/$("${LSBLK}" --json "${Parts[1]}" | "${JQ}" -r .blockdevices[0].children[0].name)"
+            return 0
+        else
+            log Failed to map "${TARGET_PART_NEW}" to "${TARGET_PART_NEW##*/}"_mapped
+            return 1
+        fi
+    fi
 }
 
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
@@ -110,8 +161,9 @@ find_partition_path(){
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
 create_filesystems(){
     local TARGET_DEVICE="$1"
-    local FS_TYPE="$2"
-    local LAYOUT="$3"
+    local TARGET_PARTITION="$2"
+    local FS_TYPE="$3"
+    local LAYOUT="$4"
     local SWAP_SPACE=4G
 
     # Find the second partitions filepaths':
@@ -140,7 +192,6 @@ create_filesystems(){
             log Failed to mkfs.btrfs on "$TARGET_DEV_PART2"
             return 1
         }
-
         # For btrfs, create a "system-root" subvolume that holds the
         # root file system.
         local BTRFS_ROOT="${TARGET_ROOT}/system-root"
@@ -218,16 +269,14 @@ create_filesystems(){
 
 prep_init_mount_point(){
     local TARGET_DEVICE="$1"
-    local GUIX_CONFIG="$2"
-    local FS_TYPE="$3"
-    local LAYOUT="$4"
+    local TARGET_PARTITION="$2"
+    local GUIX_CONFIG="$3"
+    local FS_TYPE="$4"
+    local LAYOUT="$5"
     log Initializing guix on second partition of "$TARGET_DEVICE" \
         using config "$GUIX_CONFIG"
 
-    # Assume there's a partition 1 for boot and find the second
-    # partition's filepath.
-    local TARGET_DEV_PART2
-    TARGET_DEV_PART2=$(find_partition_path "$TARGET_DEVICE" 2)
+    local TARGET_DEV_PART2="$TARGET_PARTITION"
 
     if [[ "$LAYOUT" == "basic" ]]; then
         # Basic layouts can just be mounted directly.
@@ -284,13 +333,15 @@ main(){
     # NIC_0_IP=1.2.3.4 \
     # NIC_0_NETWORK_SUBNET=1.2.3.4/24 \
     # NIC_0_NETWORK_GATEWAY=1.2.3.1 \
-    # TARGET_DEVICE=/dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0 \
-    # OSP_LAYOUT=advanced OSP_FILESYSTEM=xfs \
+    # DISK_COUNT=1 \
+    # DISK_0_PATH=/dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0 \
+    # OSP_LAYOUT=standard OSP_FILESYSTEM=xfs \
     # OSP_VARIANT_CONFIG=$(pwd)/examples/dynamic-lvm.scm \
     # ./create
     local DEFAULT_VARIANT_CONFIG="${EXAMPLEDIR}/dynamic.scm"
     local VARIANT_CONFIG="${VARIANT_CONFIG:-$DEFAULT_VARIANT_CONFIG}"
     log Running with options set to:
+    log INSTANCE_NAME: "${INSTANCE_NAME}"
     log TARGET_DEVICE: "${TARGET_DEVICE}"
     log OSP_FILESYSTEM: "${OSP_FILESYSTEM:-ext4}"
     log OSP_LAYOUT: "${OSP_LAYOUT:-basic}"
@@ -332,7 +383,13 @@ main(){
     $GUIX_COMMAND --version
 
     # A basic 2 partitions setup.
-    partition_disk "$TARGET_DEVICE"
+    partition_disk "$TARGET_DEVICE" "${LUKS_PASSPHRASE}" "$PART_SIZE"
+    local TARGET_PARTITION
+    TARGET_PARTITION=$(find_partition_path "$TARGET_DEVICE" 2)
+    if [[ -n "$LUKS_PASSPHRASE" ]]; then
+        TARGET_PARTITION="${TARGET_PARTITION##*/}_mapped"
+    fi
+    log DONE PARTITIONING. TARGET_PARTITION set to "$TARGET_PARTITION"
 
     # Add partition mappings.
     "${KPARTX}" -a "$TARGET_DEVICE"
@@ -341,11 +398,46 @@ main(){
     # Each filesystem and layout option combination is handled in the
     # create_filesystems function. This will possibly setup lvm based
     # on the OSP options.
-    create_filesystems "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
+    create_filesystems "$TARGET_DEVICE" "$TARGET_PARTITION" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
+    log DONE CREATING FILESYSTEMS
 
-    # Prep the mount point to initialize guix on and then initialize guix.
-    prep_init_mount_point "$TARGET_DEVICE" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
+    # Prep the mount point to initialize guix
+    mapfile -t Parts < <("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[].node?");
+    export LUKS_UUID="$("${BLKID}" -s UUID -o value "${Parts[1]}")"
+    export LVM_UUID="$("${BLKID}" -s UUID -o value "${TARGET_PARTITION}")"
+    if [[ -n "$LUKS_PASSPHRASE" ]]; then
+        log LUKS_UUID="$LUKS_UUID"
+    fi
+    if [[ "${OSP_LAYOUT}" == standard ]] && [[ ! "${FS_TYPE}" == btrfs ]]; then
+        log LVM_UUID="$LVM_UUID"
+    fi
+    prep_init_mount_point "$TARGET_DEVICE" "$TARGET_PARTITION" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}" "${LUKS_UUID}"
+
+    # Initialize/install Guix!
+    log Guix will now be initialized on "$TARGET_ROOT"
+
+    # The LVM_UUID variable is only needed when using luks. Since
+    # TARGET_PARTITION will generally refer to
+    # /dev/mapper/loop0p2_mapped if we are using luks, we need to find
+    # the UUID of just the second partition of the TARGET_DEVICE
     initialize_guix "$VARIANT_CONFIG" "$TARGET_ROOT" "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "$GUIX_COMMAND"
+
+    # Deactivate lvm if needed
+    if "${VGCHANGE}" "$INSTANCE_NAME"_vg01 -an &>/dev/null; then
+        log Successfully deactivated lvm volume group "$INSTANCE_NAME"_vg01
+    else
+        log Warning: failed to deactivate lvm volume group "$INSTANCE_NAME"_vg01
+    fi
+    # Close luks if needed (must have lvm deactivated)
+    if [[ -n "$LUKS_PASSPHRASE" ]]; then
+    #if "${CRYPTSETUP}" isLuks "$TARGET_PARTITION" &>/dev/null; then
+        if "${CRYPTSETUP}" luksClose "${TARGET_PARTITION##*/}" &>/dev/null; then
+            log Successfully closed luks mapping for "${TARGET_PARTITION##*/}"
+        else
+            log Failed to close luks mapping for "${TARGET_PARTITION##*/}"
+            return 1
+        fi
+    fi
 }
 
 [[ "$1" == '--source-only' ]] || main "$@"

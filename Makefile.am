@@ -13,8 +13,11 @@ exampledir = $(docdir)/examples
 dist_example_DATA = \
 	examples/config-base.scm \
 	examples/dynamic.scm \
-	examples/dynamic-lvm.scm \
+	examples/dynamic-luks.scm \
 	examples/dynamic-btrfs.scm \
+	examples/dynamic-btrfs-luks.scm \
+	examples/dynamic-lvm.scm \
+	examples/dynamic-lvm-luks.scm \
 	examples/generic.scm
 
 EXTRA_DIST = \
@@ -31,6 +34,7 @@ do_subst = $(SED) \
 	-e 's,[@]FALLOCATE[@],$(FALLOCATE),g' \
 	-e 's,[@]MKSWAP[@],$(MKSWAP),g' \
 	-e 's,[@]CHATTR[@],$(CHATTR),g' \
+	-e 's,[@]JQ[@],$(JQ),g' \
 	-e 's,[@]PARTED[@],$(PARTED),g' \
 	-e 's,[@]BTRFS[@],$(BTRFS),g' \
 	-e 's,[@]MKFS_BTRFS[@],$(MKFS_BTRFS),g' \
@@ -39,12 +43,17 @@ do_subst = $(SED) \
 	-e 's,[@]MKFS_EXT2[@],$(MKFS_EXT2),g' \
 	-e 's,[@]MKFS_EXT3[@],$(MKFS_EXT3),g' \
 	-e 's,[@]MKFS_EXT4[@],$(MKFS_EXT4),g' \
+	-e 's,[@]SFDISK[@],$(SFDISK),g' \
 	-e 's,[@]KPARTX[@],$(KPARTX),g' \
 	-e 's,[@]PVCREATE[@],$(PVCREATE),g' \
 	-e 's,[@]VGCREATE[@],$(VGCREATE),g' \
 	-e 's,[@]VGCHANGE[@],$(VGCHANGE),g' \
+	-e 's,[@]VGREMOVE[@],$(VGREMOVE),g' \
 	-e 's,[@]LVCREATE[@],$(LVCREATE),g' \
-	-e 's,[@]LOSETUP[@],$(LOSETUP),g'
+	-e 's,[@]LOSETUP[@],$(LOSETUP),g' \
+	-e 's,[@]LSBLK[@],$(LSBLK),g' \
+	-e 's,[@]BLKID[@],$(BLKID),g' \
+	-e 's,[@]CRYPTSETUP[@],$(CRYPTSETUP),g'
 
 common.sh: common.sh.in Makefile
 	$(do_subst) < $< > $@

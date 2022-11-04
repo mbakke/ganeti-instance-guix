@@ -15,7 +15,7 @@ It is possible to use a specific Guix commit via an OS parameter:
     $ gnt-instance add -o guix+default \
       -O "commit=ecd5db37ff,filesystem=ext4,layout=basic"
 
-Other supported parameters are *branch*, *repo_uri*, and
+Other supported parameters for Guix are *branch*, *repo_uri*, and
 *disable_authentication*.  If any of these parameters are set,
 `guix time-machine` will be used to build the image.  Otherwise the hosts
 (root user) Guix version will be used.
@@ -27,6 +27,17 @@ parameter, and even cross-compile a disk image by passing 'target'.
 
 Behind the scenes, this uses `guix system init` to deploy a configuration
 that matches a filesystem and partitioning layout combination.
+
+Related to partitioning and filesystems are the following options:
+
+- fs_type: choose between btrfs, f2fs, xfs, ext2, ext3 and ext4 filesystems.
+- layout: you can choose "basic" for installation on one partition, or
+  "advanced" for an LVM layout with separate partitions for
+  /gnu/store, etc. Though in the case of btrfs, the same layout is
+  setup using btrfs subvolumes.
+- part_size: specify the partition size.
+- luks_passphrase: if you set a value for this option luks will be
+  used (works fine with any layout and filesystem combination).
 
 ## Installation:
 
@@ -40,6 +51,7 @@ that matches a filesystem and partitioning layout combination.
 * multipath-tools
 * e2fsprogs
 * parted
+* jq
 
 These are optional:
 

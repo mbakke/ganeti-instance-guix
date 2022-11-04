@@ -22,9 +22,11 @@
              ((guix licenses) #:select (gpl3+))
              (guix packages)
              (gnu packages autotools)
+             (gnu packages cryptsetup)
              (gnu packages disk)
              (gnu packages linux)
-             (gnu packages virtualization))
+             (gnu packages virtualization)
+             (gnu packages web))
 
 (define %source-dir (dirname (current-filename)))
 
@@ -52,7 +54,9 @@
    (native-inputs
     (list autoconf automake))
    (inputs
-    (list e2fsprogs
+    (list cryptsetup
+          e2fsprogs
+          jq
           lvm2
           multipath-tools
           parted
