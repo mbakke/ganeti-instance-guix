@@ -129,9 +129,7 @@ partition_disk(){
         if printf '%s' "$LUKS_PASSPHRASE" | "${CRYPTSETUP}" luksOpen --key-file - "${TARGET_PART_NEW}" "${TARGET_PART_NEW##*/}"_mapped &>/dev/null; then
             log Successfully mapped "${TARGET_PART_NEW}" to "${TARGET_PART_NEW##*/}"_mapped
 
-            CLEANUP+=("${CRYPTSETUP}" luksClose "${TARGET_PARTITION##*/}")
-            printf '%s' "/dev/mapper/$("${LSBLK}" --json "${Parts[1]}" | "${JQ}" -r .blockdevices[0].children[0].name)"
-            return 0
+            CLEANUP+=("${CRYPTSETUP} luksClose ${TARGET_PART_NEW##*/}")
         else
             log Failed to map "${TARGET_PART_NEW}" to "${TARGET_PART_NEW##*/}"_mapped
             return 1
