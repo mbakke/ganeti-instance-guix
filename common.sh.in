@@ -62,8 +62,8 @@ MKFS_EXT4=@MKFS_EXT4@
 LSBLK=@LSBLK@
 BLKID=@BLKID@
 
-CACHE_DIR="@localstatedir@/cache/ganeti-instance-guix"
-GCROOTSDIR=@GCROOTSDIR@
+CACHE_DIR="${CACHE_DIR:-@localstatedir@/cache/ganeti-instance-guix}"
+GCROOTSDIR="${GCROOTSDIR:-@GCROOTSDIR@}"
 VARIANTS_DIR=@VARIANTSDIR@
 EXAMPLEDIR=@EXAMPLEDIR@
 
