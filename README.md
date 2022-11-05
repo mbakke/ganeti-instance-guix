@@ -39,10 +39,19 @@ Related to partitioning and filesystems are the following options:
 - luks_passphrase: if you set a value for this option luks will be
   used (works fine with any layout and filesystem combination).
 
+Note that all layout and filesystem combinations do not work on all
+disk storage backends. For example, using a combination that creates
+an LVM setup does not work well when the disk backend is a logical
+volume itself. You could use a "file" for disk storage backend
+instead.
+
 ## Installation:
 
     $ ./configure --sysconfdir=/etc --localstatedir=/var
     $ make && sudo make install
+
+Use ~--with-guix=guix~ if you want to use whatever guix is currently
+in your PATH.
 
 ## Dependencies:
 
@@ -52,12 +61,14 @@ Related to partitioning and filesystems are the following options:
 * e2fsprogs
 * parted
 * jq
+* sfdisk
 
 These are optional:
 
 * xfsprogs
 * btrfs-progs
 * lvm2, for LVM support (experimental)
+* cryptsetup
 
 ## Limitations:
 
