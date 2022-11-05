@@ -1,5 +1,11 @@
 (use-modules (gnu)) ;; needed for "device" below
-(load "@EXAMPLEDIR@/config-base.scm")
+
+(let ((config-base (string-append (dirname (current-filename))
+                                  "/config-base.scm")))
+  (if (file-exists? config-base)
+      (load config-base)
+      (load "@EXAMPLEDIR@/config-base.scm")))
+
 (operating-system
  (inherit default-os)
  (mapped-devices (let ((mycryptuuid (getenv "LUKS_UUID")))
