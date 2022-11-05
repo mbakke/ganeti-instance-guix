@@ -4,10 +4,13 @@
 /autom4te.cache
 /build-aux/install-sh
 /build-aux/missing
+/build-aux/tap-driver.sh
+/build-aux/test-driver
 /common.sh
 /config.status
 /configure
 /INSTALL
+examples/dynamic*.scm
 Makefile
 Makefile.in
-examples/dynamic*.scm
+tests/*.trs

@@ -6,6 +6,13 @@ dist_os_SCRIPTS = create import export rename verify
 dist_os_DATA = ganeti_api_version parameters.list
 os_DATA = common.sh
 
+TESTS = 					\
+	tests/create-btrfs.sh 			\
+	tests/create-btrfs-luks.sh 		\
+	tests/create-luks.sh			\
+	tests/create-lvm.sh 			\
+	tests/create-lvm-luks.sh
+
 dist_doc_DATA = COPYING NEWS README.md
 
 exampledir = $(docdir)/examples
@@ -21,6 +28,7 @@ dist_example_DATA = \
 	examples/generic.scm
 
 EXTRA_DIST = \
+	$(TESTS)				\
 	common.sh.in
 
 do_subst = $(SED) \
