@@ -15,8 +15,8 @@ mapped_device=$(losetup_device "$DISK_IMAGE")
 CLEANUP+=("${LOSETUP} -d $mapped_device")
 
 partition_device "$mapped_device"
-test 2 == $(parted -j "$mapped_device" print | jq '.disk.partitions | length')
+test 2 == $("${PARTED}" -j "$mapped_device" print | jq '.disk.partitions | length')
 
 partition_device "$mapped_device" "500MiB"
-test "497MiB" == $(parted -j "$mapped_device" unit MiB print \
+test "497MiB" == $("$PARTED" -j "$mapped_device" unit MiB print \
                        | jq -r '.disk.partitions[] | select(.number==2).size')
