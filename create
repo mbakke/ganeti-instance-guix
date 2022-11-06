@@ -30,6 +30,25 @@ CLEANUP+=("rmdir $TEMPDIR")
 # This is the root filesystem mount-point for guix.
 TARGET_ROOT="$TEMPDIR"
 
+if [[ -n "$OS_VARIANT" ]]; then
+    if [[ ! -d "$VARIANTS_DIR" ]]; then
+        log "OS Variants directory $VARIANTS_DIR doesn't exist"
+        exit 1
+    fi
+    VARIANT_CONFIG="$VARIANTS_DIR/$OS_VARIANT.scm"
+    if [[ ! -e "$VARIANT_CONFIG" ]]; then
+        log "Configuration file for $OS_VARIANT does not exist"
+        exit 1
+    fi
+fi
+
+if [[ $DISK_COUNT -gt 0 ]] && [[ -n "$DISK_0_PATH" ]]; then
+    TARGET_DEVICE=$DISK_0_PATH
+else
+    log "At least one disk is needed."
+    exit 1
+fi
+
 guix_setup(){
     # Prepare the time machine if relevant.
     if [ -n "$OSP_COMMIT" ] || [ -n "$OSP_BRANCH" ] || [ -n "$OSP_REPO_URI" ]; then
