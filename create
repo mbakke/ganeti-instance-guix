@@ -137,7 +137,7 @@ partition_disk(){
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
 # find_partition_path returns the second partition's filepath
 find_partition_path(){
-    local TARGET_DEVICE="$1"
+    local device="$1"
     local part="$2"
     local mappedname
 
@@ -149,8 +149,12 @@ find_partition_path(){
     # For the first two, the mapped device becomes e.g. /dev/mapper/drbdNpN.
     # For the latter, the mapped device becomes /dev/mapper/vg-a--b--c--d.disk0pN.
 
-    mappedname="$("$KPARTX" -l "$TARGET_DEVICE" | awk '{ print $1 }' | grep -m 1 "p${part}$")"
-    echo "/dev/mapper/${mappedname}"
+    if [[ "$device" =~ "/dev/loop" ]]; then
+        echo "${device}p${part}"
+    else
+        mappedname="$("$KPARTX" -l "$device" | awk '{ print $1 }' | grep -m 1 "p${part}$")"
+        echo "/dev/mapper/${mappedname}"
+    fi
 }
 
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
