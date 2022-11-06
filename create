@@ -275,6 +275,7 @@ initialize_guix(){
     local GUIX="$5"
 
     # Build the system configuration and save GC root.
+    local GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
     rm -f "$GC_ROOT"
     $GUIX build --fallback --no-grafts -r "$GC_ROOT" "$GUIX_CONFIG"
 
@@ -301,10 +302,6 @@ main(){
     fi
     if [[ -n "$GCROOTSDIR" ]] && [[ ! -d "$GCROOTSDIR" ]]; then
         mkdir -p "$GCROOTSDIR"
-    fi
-
-    if [[ -n "$GCROOTSDIR" ]]; then
-        local GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
     fi
     if [[ -n "$CACHE_DIR" ]]; then
         export XDG_CACHE_HOME="$CACHE_DIR"
