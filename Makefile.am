@@ -15,6 +15,9 @@ TESTS = 					\
 	tests/file-system.sh			\
 	tests/partition.sh
 
+TEST_EXTENSIONS = .sh
+SH_LOG_COMPILER = $(SHELL)
+
 dist_doc_DATA = COPYING NEWS README.md
 
 exampledir = $(docdir)/examples
