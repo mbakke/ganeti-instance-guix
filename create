@@ -291,20 +291,20 @@ prep_init_mount_point(){
 
 # guix system init on a target device's second partition
 initialize_guix(){
-    local GUIX_CONFIG="$1"
-    local TARGET_ROOT="$2"
-    export TARGET_DEVICE="$3"
-    export FS_TYPE="$4"
-    local GUIX="$5"
+    local guix_command="$1"
+    local config="$2"
+    local mount_point="$3"
+    export TARGET_DEVICE="$4"
+    export FS_TYPE="$5"
 
     # Build the system configuration and save GC root.
     local GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
     rm -f "$GC_ROOT"
-    $GUIX build --fallback --no-grafts -r "$GC_ROOT" "$GUIX_CONFIG"
+    $guix_command build --fallback --no-grafts -r "$GC_ROOT" "$config"
 
     # Install GuixSD
-    $GUIX init "$GUIX_CONFIG" "$TARGET_ROOT" || {
-        log Failed to guix system init "$GUIX_CONFIG" "$TARGET_ROOT"
+    $guix_command init "$config" "$mount_point" || {
+        log Failed to guix system init "$config" "$mount_point"
         return 1
     }
 }
@@ -389,7 +389,7 @@ main(){
     # TARGET_PARTITION will generally refer to
     # /dev/mapper/loop0p2_mapped if we are using luks, we need to find
     # the UUID of just the second partition of the TARGET_DEVICE
-    initialize_guix "$VARIANT_CONFIG" "$TARGET_ROOT" "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}" "$GUIX_COMMAND"
+    initialize_guix "$GUIX_COMMAND" "$VARIANT_CONFIG" "$TARGET_ROOT" "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}"
 }
 
 [[ "$1" == '--source-only' ]] || main "$@"
