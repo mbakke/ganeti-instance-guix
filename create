@@ -372,8 +372,8 @@ main(){
 
     # Prep the mount point to initialize guix
     mapfile -t Parts < <("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[].node?");
-    export LUKS_UUID="$("${BLKID}" -s UUID -o value "${Parts[1]}")"
-    export LVM_UUID="$("${BLKID}" -s UUID -o value "${TARGET_PARTITION}")"
+    export LUKS_UUID="$(find_uuid ${Parts[1]})"
+    export LVM_UUID="$(find_uuid ${TARGET_PARTITION})"
     if [[ -n "$LUKS_PASSPHRASE" ]]; then
         log LUKS_UUID="$LUKS_UUID"
     fi

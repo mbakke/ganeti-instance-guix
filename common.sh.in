@@ -108,3 +108,8 @@ losetup_device() (
     local device="$1"
     "${LOSETUP}" --show -f "$device"
 )
+
+find_uuid() (
+    local device="$1"
+    "$BLKID" -o value -s UUID "$device"
+)
