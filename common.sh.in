@@ -110,3 +110,15 @@ format_device() (
             ;;
         esac
 )
+
+partition_device() (
+    local device="$1"
+    local size="$2"
+
+    "${PARTED}" \
+        --script "$device" \
+        mklabel gpt \
+        mkpart primary 1MiB 3MiB \
+        mkpart primary 3MiB "${size:-100%}" \
+        set 1 bios_grub on
+)
