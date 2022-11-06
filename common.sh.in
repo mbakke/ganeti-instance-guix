@@ -103,3 +103,8 @@ partition_device() (
         mkpart primary 3MiB "${size:-100%}" \
         set 1 bios_grub on
 )
+
+losetup_device() (
+    local device="$1"
+    "${LOSETUP}" --show -f "$device"
+)

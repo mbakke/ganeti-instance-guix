@@ -329,11 +329,8 @@ main(){
     # Check if TARGET_DEVICE is a real block device, and losetup it if
     # it isn't (for example when using a file disk):
     if [[ ! -b "$TARGET_DEVICE" ]]; then
-        local TARGET_DEVICE_ORIG="$TARGET_DEVICE"
-        if ! TARGET_DEVICE=$("${LOSETUP}" --show -f "$TARGET_DEVICE"); then
-            log Failed to "${LOSETUP}" "$TARGET_DEVICE_ORIG"
-            return 1
-        fi
+        TARGET_DEVICE_ORIG="$TARGET_DEVICE"
+        TARGET_DEVICE=$(losetup_device "$TARGET_DEVICE")
         CLEANUP+=("${LOSETUP} -d $TARGET_DEVICE")
     fi
 
