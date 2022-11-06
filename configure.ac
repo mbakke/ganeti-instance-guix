@@ -112,6 +112,13 @@ then
   AC_MSG_ERROR([chattr not found, please install e2fsprogs])
 fi
 
+AC_ARG_VAR(MKE2FS, [mke2fs path])
+AC_PATH_PROG(MKE2FS, [mke2fs], mke2fs)
+if test -z "$MKE2FS"
+then
+  AC_MSG_ERROR([mke2fs not found, please install e2fsprogs])
+fi
+
 AC_ARG_VAR(JQ, [jq path])
 AC_PATH_PROG(JQ, [jq])
 if test -z "$JQ"
@@ -133,9 +140,6 @@ AC_PATH_PROG(BTRFS, [btrfs], btrfs)
 AC_PATH_PROG(MKFS_BTRFS, [mkfs.btrfs], mkfs.btrfs)
 AC_PATH_PROG(MKFS_F2FS, [mkfs.f2fs], mkfs.f2fs)
 AC_PATH_PROG(MKFS_XFS, [mkfs.xfs], mkfs.xfs)
-AC_PATH_PROG(MKFS_EXT2, [mkfs.ext2], mkfs.ext2)
-AC_PATH_PROG(MKFS_EXT3, [mkfs.ext3], mkfs.ext3)
-AC_PATH_PROG(MKFS_EXT4, [mkfs.ext4], mkfs.ext4)
 
 AC_ARG_VAR(KPARTX, [kpartx path])
 AC_PATH_PROG(KPARTX, [kpartx])

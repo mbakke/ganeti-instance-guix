@@ -42,15 +42,13 @@ do_subst = $(SED) \
 	-e 's,[@]FALLOCATE[@],$(FALLOCATE),g' \
 	-e 's,[@]MKSWAP[@],$(MKSWAP),g' \
 	-e 's,[@]CHATTR[@],$(CHATTR),g' \
+	-e 's,[@]MKE2FS[@],$(MKE2FS),g' \
 	-e 's,[@]JQ[@],$(JQ),g' \
 	-e 's,[@]PARTED[@],$(PARTED),g' \
 	-e 's,[@]BTRFS[@],$(BTRFS),g' \
 	-e 's,[@]MKFS_BTRFS[@],$(MKFS_BTRFS),g' \
 	-e 's,[@]MKFS_F2FS[@],$(MKFS_F2FS),g' \
 	-e 's,[@]MKFS_XFS[@],$(MKFS_XFS),g' \
-	-e 's,[@]MKFS_EXT2[@],$(MKFS_EXT2),g' \
-	-e 's,[@]MKFS_EXT3[@],$(MKFS_EXT3),g' \
-	-e 's,[@]MKFS_EXT4[@],$(MKFS_EXT4),g' \
 	-e 's,[@]SFDISK[@],$(SFDISK),g' \
 	-e 's,[@]KPARTX[@],$(KPARTX),g' \
 	-e 's,[@]PVCREATE[@],$(PVCREATE),g' \

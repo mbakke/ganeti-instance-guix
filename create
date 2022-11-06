@@ -165,31 +165,15 @@ create_filesystems(){
     local TARGET_DEV_PART2
     TARGET_DEV_PART2="${TARGET_PARTITION}"
 
-    # Resolve the corresponding $MKFS_$FS_TYPE variable.
-    eval MKFS_CMD=\$"MKFS_$(echo "$FS_TYPE" | tr '[:lower:]' '[:upper:]')"
-
     if [[ "$LAYOUT" == basic ]]; then
-        case "$FS_TYPE" in
-            f2fs)
-                "${MKFS_CMD}" -l "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2"
-                ;;
-            ext*)
-                "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -F "$TARGET_DEV_PART2"
-                ;;
-            *)
-                "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2"
-                ;;
-        esac
+        format_device "$TARGET_DEV_PART2" "$FS_TYPE" "${INSTANCE_NAME}-system"
     elif [[ "$FS_TYPE" == btrfs ]]; then
         command -v "${BTRFS}" || {
             log "btrfs requested but not installed"
             exit 1
         }
-        log Creating btrfs filesystem on second partition of "$TARGET_DEVICE"
-        "${MKFS_CMD}" -L "${INSTANCE_NAME}-system" -f "$TARGET_DEV_PART2" || {
-            log Failed to mkfs.btrfs on "$TARGET_DEV_PART2"
-            return 1
-        }
+        format_device "$TARGET_DEV_PART2" "$FS_TYPE" "${INSTANCE_NAME}-system"
+
         # For btrfs, create a "system-root" subvolume that holds the
         # root file system.
         local BTRFS_ROOT="${TARGET_ROOT}/system-root"
@@ -250,13 +234,8 @@ create_filesystems(){
         # confirmation
         "${MKSWAP}" -f --label "$INSTANCE_NAME"-swap \
                     /dev/"$INSTANCE_NAME"_vg01/lv_swap
-        log Creating "$FS_TYPE" filesystems on logical volumes \
-            of "$INSTANCE_NAME"_vg01 of "$TARGET_DEV_PART2"
         for lv in lv_root lv_home lv_gnu_store lv_var_log lv_var_lib; do
-            "$MKFS_CMD" "/dev/${INSTANCE_NAME}_vg01/${lv}" || {
-                log Failed to mkfs."$FS_TYPE" on /dev/"${INSTANCE_NAME}_vg01/$lv"
-                return 1
-            }
+            format_device "/dev/${INSTANCE_NAME}_vg01/${lv}" "$FS_TYPE" "$lv"
         done
     else
         log "Unsupported filesystem type and/or layout combination:"

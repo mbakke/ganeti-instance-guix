@@ -53,12 +53,10 @@ VGCHANGE=@VGCHANGE@
 VGREMOVE=@VGREMOVE@
 LVCREATE=@LVCREATE@
 LOSETUP=@LOSETUP@
+MKE2FS=@MKE2FS@
 MKFS_BTRFS=@MKFS_BTRFS@
 MKFS_F2FS=@MKFS_F2FS@
 MKFS_XFS=@MKFS_XFS@
-MKFS_EXT2=@MKFS_EXT2@
-MKFS_EXT3=@MKFS_EXT3@
-MKFS_EXT4=@MKFS_EXT4@
 LSBLK=@LSBLK@
 BLKID=@BLKID@
 
@@ -85,3 +83,30 @@ else
     log "At least one disk is needed."
     exit 1
 fi
+
+format_device() (
+    local device="$1"
+    local filesystem="$2"
+    local label="$3"
+
+    log "Formatting $device with $filesystem"
+
+    case $filesystem in
+        btrfs)
+            "${MKFS_BTRFS}" -L "$label" -f "$device"
+            ;;
+        ext[234])
+            "${MKE2FS}" -t "$filesystem" -L "$label" -F "$device"
+            ;;
+        f2fs)
+            "${MKFS_F2FS}" -l "$label" -f "$device"
+            ;;
+        xfs)
+            "${MKFS_XFS}" -l "$label" -f "$device"
+            ;;
+        *)
+            log "Unsupported file system: $filesystem"
+            return 1
+            ;;
+        esac
+)
