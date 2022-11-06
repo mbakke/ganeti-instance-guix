@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Guix cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/guix
+          key: guix-cache-${{ github.sha }}
+          restore-keys: |
+            guix-cache-
+      - name: Install Guix
+        uses: PromyLOPH/guix-install-action@v1
+        with:
+          # Speed up Guix installation, we don't need latest.
+          pullAfterInstall: false
+      # We need a newer parted for JSON support; the remaining dependencies
+      # can be taken from Ubuntu.  Somehow 'guix shell' does not work on the
+      # runner (PATH can not be changed), so install the old fashioned way.
+      - name: Install dependencies
+        run: guix install --fallback parted
+      - name: Set PATH
+        run: |
+          echo "$HOME/.guix-profile/bin:$HOME/.guix-profile/sbin" >> $GITHUB_PATH
+      - name: Run tests
+        run: |
+          ./bootstrap
+          ./configure --with-guix=guix \
+            --localstatedir=/var --sysconfdir=/etc
+          make
+          sudo make -j1 check
+      - name: Print logs
+        if: ${{ failure() }}
+        run: cat test-suite.log
