@@ -39,9 +39,7 @@
                   (bootloader grub-bootloader)
                   (targets `(,(getenv "TARGET_DEVICE")))))
     (file-systems (cons* (file-system
-                           (device (file-system-label
-                                    (string-append (getenv "INSTANCE_NAME")
-                                                   "-system")))
+                           (device (uuid (getenv "TARGET_UUID")))
                            (mount-point "/")
                            (type (or (getenv "OSP_FILESYSTEM") "ext4")))
                          %base-file-systems))

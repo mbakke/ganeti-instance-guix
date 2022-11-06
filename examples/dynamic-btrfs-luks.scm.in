@@ -15,45 +15,45 @@
 		     (targets (list "cryptroot"))
 		     (type luks-device-mapping)))))
  (file-systems
-  (let* ((mylabel (string-append (getenv "INSTANCE_NAME") "-system"))
+  (let* ((target-uuid (getenv "TARGET_UUID"))
 	 (%my-filesystems
 	  (list
 	   (file-system
-	    (device (file-system-label mylabel))
+	    (device (uuid target-uuid))
 	    (mount-point "/")
 	    (dependencies mapped-devices)
 	    (type "btrfs")
 	    (options "subvol=/system-root"))
 	   (file-system
-	    (device (file-system-label mylabel))
+	    (device (uuid target-uuid))
 	    (needed-for-boot? #t)
 	    (mount-point "/gnu/store")
 	    (dependencies mapped-devices)
 	    (type "btrfs")
 	    (options "subvol=system-root/gnu/store"))
 	   (file-system
-	    (device (file-system-label mylabel))
+	    (device (uuid target-uuid))
 	    (mount-point "/var/log")
 	    (needed-for-boot? #t)
 	    (dependencies mapped-devices)
 	    (type "btrfs")
 	    (options "subvol=system-root/var/log"))
 	   (file-system
-	    (device (file-system-label mylabel))
+	    (device (uuid target-uuid))
 	    (mount-point "/var/lib")
 	    (needed-for-boot? #t)
 	    (dependencies mapped-devices)
 	    (type "btrfs")
 	    (options "subvol=system-root/var/lib"))
 	   (file-system
-	    (device (file-system-label mylabel))
+	    (device (uuid target-uuid))
 	    (mount-point "/home")
 	    (needed-for-boot? #t)
 	    (dependencies mapped-devices)
 	    (type "btrfs")
 	    (options "subvol=system-root/home"))
 	   (file-system
-	    (device (file-system-label mylabel))
+	    (device (uuid target-uuid))
 	    (mount-point "/swap")
 	    (dependencies mapped-devices)
 	    (needed-for-boot? #t)

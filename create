@@ -295,7 +295,8 @@ initialize_guix(){
     local config="$2"
     local mount_point="$3"
     export TARGET_DEVICE="$4"
-    export FS_TYPE="$5"
+    export TARGET_UUID="$5"
+    export FS_TYPE="$6"
 
     # Build the system configuration and save GC root.
     local GC_ROOT="$GCROOTSDIR/$INSTANCE_NAME"
@@ -373,23 +374,21 @@ main(){
     # Prep the mount point to initialize guix
     mapfile -t Parts < <("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[].node?");
     export LUKS_UUID="$(find_uuid ${Parts[1]})"
-    export LVM_UUID="$(find_uuid ${TARGET_PARTITION})"
     if [[ -n "$LUKS_PASSPHRASE" ]]; then
         log LUKS_UUID="$LUKS_UUID"
     fi
-    if [[ "${OSP_LAYOUT}" == standard ]] && [[ ! "${FS_TYPE}" == btrfs ]]; then
-        log LVM_UUID="$LVM_UUID"
-    fi
     prep_init_mount_point "$TARGET_DEVICE" "$TARGET_PARTITION" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}" "${LUKS_UUID}"
+
+    TARGET_UUID="$(find_uuid ${TARGET_PARTITION})"
+    log TARGET_UUID="$TARGET_UUID"
 
     # Initialize/install Guix!
     log Guix will now be initialized on "$TARGET_ROOT"
 
-    # The LVM_UUID variable is only needed when using luks. Since
-    # TARGET_PARTITION will generally refer to
+    # Since TARGET_PARTITION will generally refer to
     # /dev/mapper/loop0p2_mapped if we are using luks, we need to find
     # the UUID of just the second partition of the TARGET_DEVICE
-    initialize_guix "$GUIX_COMMAND" "$VARIANT_CONFIG" "$TARGET_ROOT" "$TARGET_DEVICE" "${OSP_FILESYSTEM:-ext4}"
+    initialize_guix "$GUIX_COMMAND" "$VARIANT_CONFIG" "$TARGET_ROOT" "$TARGET_DEVICE" "$TARGET_UUID" "${OSP_FILESYSTEM:-ext4}"
 }
 
 [[ "$1" == '--source-only' ]] || main "$@"

@@ -9,37 +9,36 @@
 (operating-system
   (inherit default-os)
   (file-systems
-   (let* ((mylabel (string-append (getenv "INSTANCE_NAME")
-                                  "-system"))
+   (let* ((target-uuid (getenv "TARGET_UUID"))
           (%my-filesystems
            (list
             (file-system
-              (device (file-system-label mylabel))
+              (device (uuid target-uuid))
               (mount-point "/")
               (type "btrfs")
               (options "subvol=/system-root"))
             (file-system
-              (device (file-system-label mylabel))
+              (device (uuid target-uuid))
               (mount-point "/gnu/store")
               (type "btrfs")
               (options "subvol=system-root/gnu/store"))
             (file-system
-              (device (file-system-label mylabel))
+              (device (uuid target-uuid))
               (mount-point "/var/log")
               (type "btrfs")
               (options "subvol=system-root/var/log"))
             (file-system
-              (device (file-system-label mylabel))
+              (device (uuid target-uuid))
               (mount-point "/var/lib")
               (type "btrfs")
               (options "subvol=system-root/var/lib"))
             (file-system
-              (device (file-system-label mylabel))
+              (device (uuid target-uuid))
               (mount-point "/home")
               (type "btrfs")
               (options "subvol=system-root/home"))
             (file-system
-              (device (file-system-label mylabel))
+              (device (uuid target-uuid))
               (mount-point "/swap")
               (needed-for-boot? #t)
               (type "btrfs")

@@ -15,10 +15,10 @@
 		     (targets (list (string-append (getenv "INSTANCE_NAME") "-system_mapped")))
 		     (type luks-device-mapping)))))
  (file-systems
-  (let* ((mylabel (string-append (getenv "INSTANCE_NAME") "-system")))
+  (let* ((target-uuid (getenv "TARGET_UUID")))
     (cons*
      (file-system
-      (device (file-system-label mylabel))
+      (device (uuid target-uuid))
       (mount-point "/")
       (dependencies mapped-devices)
       (needed-for-boot? #t)
