@@ -169,13 +169,13 @@ create_filesystems(){
     TARGET_DEV_PART2="${TARGET_PARTITION}"
 
     if [[ "$LAYOUT" == basic ]]; then
-        format_device "$TARGET_DEV_PART2" "$FS_TYPE" "${INSTANCE_NAME}-system"
+        format_device "$TARGET_DEV_PART2" "$FS_TYPE"
     elif [[ "$FS_TYPE" == btrfs ]]; then
         command -v "${BTRFS}" || {
             log "btrfs requested but not installed"
             exit 1
         }
-        format_device "$TARGET_DEV_PART2" "$FS_TYPE" "${INSTANCE_NAME}-system"
+        format_device "$TARGET_DEV_PART2" "$FS_TYPE"
 
         # For btrfs, create a "system-root" subvolume that holds the
         # root file system.
@@ -238,7 +238,7 @@ create_filesystems(){
         "${MKSWAP}" -f --label "$INSTANCE_NAME"-swap \
                     /dev/"$INSTANCE_NAME"_vg01/lv_swap
         for lv in lv_root lv_home lv_gnu_store lv_var_log lv_var_lib; do
-            format_device "/dev/${INSTANCE_NAME}_vg01/${lv}" "$FS_TYPE" "$lv"
+            format_device "/dev/${INSTANCE_NAME}_vg01/${lv}" "$FS_TYPE"
         done
     else
         log "Unsupported filesystem type and/or layout combination:"

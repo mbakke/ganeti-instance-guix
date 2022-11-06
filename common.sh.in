@@ -74,16 +74,16 @@ format_device() (
 
     case $filesystem in
         btrfs)
-            "${MKFS_BTRFS}" -L "$label" -f "$device"
+            "${MKFS_BTRFS}" -f "$device"
             ;;
         ext[234])
-            "${MKE2FS}" -t "$filesystem" -L "$label" -F "$device"
+            "${MKE2FS}" -t "$filesystem" -F "$device"
             ;;
         f2fs)
-            "${MKFS_F2FS}" -l "$label" -f "$device"
+            "${MKFS_F2FS}" -f "$device"
             ;;
         xfs)
-            "${MKFS_XFS}" -l "$label" -f "$device"
+            "${MKFS_XFS}" -f "$device"
             ;;
         *)
             log "Unsupported file system: $filesystem"

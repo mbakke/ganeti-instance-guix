@@ -9,8 +9,6 @@ fallocate -l 1GiB "$DISK_IMAGE"
 
 # ext support is mandatory.
 format_device "$DISK_IMAGE" ext4
-format_device "$DISK_IMAGE" ext4 test-label
-tune2fs -l "$DISK_IMAGE" | grep test-label
 
 if [ -x "$MKFS_BTRFS" ]; then
     format_device "$DISK_IMAGE" btrfs
