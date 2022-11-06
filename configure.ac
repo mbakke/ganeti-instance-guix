@@ -171,6 +171,5 @@ then
 fi
 
 AC_CONFIG_FILES([ Makefile ])
-AC_REQUIRE_AUX_FILE([tap-driver.sh])
 
 AC_OUTPUT
