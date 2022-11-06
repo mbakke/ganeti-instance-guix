@@ -12,7 +12,8 @@ TESTS = 					\
 	tests/create-luks.sh			\
 	tests/create-lvm.sh 			\
 	tests/create-lvm-luks.sh		\
-	tests/file-system.sh
+	tests/file-system.sh			\
+	tests/partition.sh
 
 dist_doc_DATA = COPYING NEWS README.md
 
