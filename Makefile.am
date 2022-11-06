@@ -11,7 +11,8 @@ TESTS = 					\
 	tests/create-btrfs-luks.sh 		\
 	tests/create-luks.sh			\
 	tests/create-lvm.sh 			\
-	tests/create-lvm-luks.sh
+	tests/create-lvm-luks.sh		\
+	tests/file-system.sh
 
 dist_doc_DATA = COPYING NEWS README.md
 
