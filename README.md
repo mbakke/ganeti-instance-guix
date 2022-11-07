@@ -50,8 +50,8 @@ instead.
     $ ./configure --sysconfdir=/etc --localstatedir=/var
     $ make && sudo make install
 
-Use ~--with-guix=guix~ if you want to use whatever guix is currently
-in your PATH.
+For development you may want to pass `--with-guix=guix` to use the
+Guix available on `$PATH` instead of the root users Guix.
 
 ## Dependencies
 

@@ -27,7 +27,7 @@ AC_SUBST(VARIANTSDIR, $variantsdir)
 AC_ARG_WITH([guix],
   [AS_HELP_STRING([--with-guix=GUIX],
     [the Guix executable to use at run-time]
-    [ (default is the root users Guix)]
+    [ (default is $localstatedir/guix/profiles/per-user/root/current-guix/bin/guix)]
   )],
   [guix="$withval"],
   [guix="$localstatedir/guix/profiles/per-user/root/current-guix/bin/guix"])
