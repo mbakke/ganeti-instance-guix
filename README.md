@@ -2,7 +2,7 @@
 
 Create Guix instances on Ganeti!
 
-## Usage:
+## Usage
 
     $ gnt-instance add -o guix+default my-instance
 
@@ -45,7 +45,7 @@ an LVM setup does not work well when the disk backend is a logical
 volume itself. You could use a "file" for disk storage backend
 instead.
 
-## Installation:
+## Installation
 
     $ ./configure --sysconfdir=/etc --localstatedir=/var
     $ make && sudo make install
@@ -53,24 +53,23 @@ instead.
 Use ~--with-guix=guix~ if you want to use whatever guix is currently
 in your PATH.
 
-## Dependencies:
+## Dependencies
 
 * Guix
 * util-linux
 * multipath-tools
 * e2fsprogs
 * parted
-* jq
-* sfdisk
 
 These are optional:
 
+* jq (for running tests)
 * xfsprogs
 * btrfs-progs
 * lvm2, for LVM support (experimental)
 * cryptsetup
 
-## Limitations:
+## Limitations
 
 * No import and export functionality yet.
 * Runs with elevated privileges on the host.
