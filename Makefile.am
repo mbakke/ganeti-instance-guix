@@ -21,7 +21,6 @@ exampledir = $(docdir)/examples
 dist_example_DATA = \
 	examples/config-base.scm \
 	examples/dynamic.scm \
-	examples/dynamic-btrfs.scm \
 	examples/dynamic-lvm.scm \
 	examples/generic.scm
 
