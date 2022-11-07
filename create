@@ -84,8 +84,7 @@ guix_setup(){
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
 partition_disk(){
     local TARGET_DEVICE="$1"
-    local LUKS_PASSPHRASE="$2"
-    local SIZE_PART_2="$3"
+    local SIZE_PART_2="$2"
 
     # It has happened that some VM has kernel panicked due to first
     # sectors not being properly wiped, and writing some random stuff
@@ -98,27 +97,6 @@ partition_disk(){
     # If part2 should have a size limit, then use that for the second partition.
     log Creating 2 partitions on "$TARGET_DEVICE"
     partition_device "$TARGET_DEVICE" "$SIZE_PART_2"
-    log Done creating 2 partitions. Checking for LUKS.
-    # If luks, then luks-encrypt the target partition
-    local TARGET_PART_NEW
-    TARGET_PART_NEW=$("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | ${JQ} -r ".partitiontable.partitions[1].node")
-    log TARGET_PART_NEW="$TARGET_PART_NEW"
-    if [[ -n "${LUKS_PASSPHRASE}" ]]; then
-        log LUKS passphrase is set. Starting LUKS formatting.
-        if printf '%s' "$LUKS_PASSPHRASE" | "${CRYPTSETUP}" luksFormat --type=luks1 --key-file - "${TARGET_PART_NEW}" &>/dev/null; then
-            log Successfully luksformatted "${TARGET_PART_NEW}"
-        else
-            log Failed to luksformat "${TARGET_PART_NEW}"
-            return 1
-        fi
-        if printf '%s' "$LUKS_PASSPHRASE" | "${CRYPTSETUP}" luksOpen --key-file - "${TARGET_PART_NEW}" "${TARGET_PART_NEW##*/}"_mapped &>/dev/null; then
-            log Successfully mapped "${TARGET_PART_NEW}" to "${TARGET_PART_NEW##*/}"_mapped
-            CLEANUP+=("${CRYPTSETUP} luksClose ${TARGET_PART_NEW##*/}"_mapped)
-        else
-            log Failed to map "${TARGET_PART_NEW}" to "${TARGET_PART_NEW##*/}"_mapped
-            return 1
-        fi
-    fi
 }
 
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
@@ -337,7 +315,7 @@ main(){
     $GUIX_COMMAND --version
 
     # A basic 2 partitions setup.
-    partition_disk "$TARGET_DEVICE" "${LUKS_PASSPHRASE}" "$PART_SIZE"
+    partition_disk "$TARGET_DEVICE" "$PART_SIZE"
     log DONE PARTITIONING.
 
     # Add partition mappings.  Test $DISK_0_PATH because $TARGET_DEVICE
@@ -352,22 +330,33 @@ main(){
     # on the OSP options.
     local TARGET_PARTITION
     TARGET_PARTITION=$(find_partition_path "$TARGET_DEVICE" 2)
-    # we rely on that partition_disk procedure use cryptsetup such
-    # that part2 name is opened with luks as name_mapped:
-    if [[ -n "$LUKS_PASSPHRASE" ]]; then
-        TARGET_PARTITION="/dev/mapper/${TARGET_PARTITION##*/}_mapped"
-    fi
     log TARGET_PARTITION set to "$TARGET_PARTITION"
+
+    if [[ -n "$LUKS_PASSPHRASE" ]]; then
+        local luks_name="${TARGET_PARTITION##*/}_mapped"
+        local luks_mapped="/dev/mapper/${luks_name}"
+        log "LUKS passphrase is set.  Starting LUKS formatting."
+        luks_format "$TARGET_PARTITION" "$LUKS_PASSPHRASE"
+        log Mapping LUKS device "$TARGET_PARTITION" to "$luks_mapped"
+        luks_open "$TARGET_PARTITION" "$luks_name" "$LUKS_PASSPHRASE"
+        CLEANUP+=("luks_close $luks_name")
+
+        # This variable is used by Guix configurations.
+        LUKS_UUID="$(find_uuid ${TARGET_PARTITION})"
+        log LUKS_UUID is $LUKS_UUID
+        export LUKS_UUID
+
+        # Hijack $TARGET_PARTITION to the mapped device.
+        TARGET_PARTITION="$luks_mapped"
+        log TARGET_PARTITION is now "$TARGET_PARTITION"
+    fi
+
+    log Creating file system on "$TARGET_PARTITION"
     create_filesystems "$TARGET_DEVICE" "$TARGET_PARTITION" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
     log DONE CREATING FILESYSTEMS
 
     # Prep the mount point to initialize guix
-    mapfile -t Parts < <("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[].node?");
-    export LUKS_UUID="$(find_uuid ${Parts[1]})"
-    if [[ -n "$LUKS_PASSPHRASE" ]]; then
-        log LUKS_UUID="$LUKS_UUID"
-    fi
-    prep_init_mount_point "$TARGET_DEVICE" "$TARGET_PARTITION" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}" "${LUKS_UUID}"
+    prep_init_mount_point "$TARGET_DEVICE" "$TARGET_PARTITION" "$VARIANT_CONFIG" "${OSP_FILESYSTEM:-ext4}" "${OSP_LAYOUT:-basic}"
 
     TARGET_UUID="$(find_uuid ${TARGET_PARTITION})"
     log TARGET_UUID="$TARGET_UUID"
