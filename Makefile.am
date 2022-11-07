@@ -7,9 +7,9 @@ dist_os_DATA = ganeti_api_version parameters.list
 os_DATA = common.sh
 
 TESTS = 					\
+	tests/create.sh				\
 	tests/create-btrfs.sh 			\
 	tests/create-btrfs-luks.sh 		\
-	tests/create-luks.sh			\
 	tests/create-lvm.sh 			\
 	tests/create-lvm-luks.sh		\
 	tests/file-system.sh			\
@@ -25,7 +25,6 @@ exampledir = $(docdir)/examples
 dist_example_DATA = \
 	examples/config-base.scm \
 	examples/dynamic.scm \
-	examples/dynamic-luks.scm \
 	examples/dynamic-btrfs.scm \
 	examples/dynamic-btrfs-luks.scm \
 	examples/dynamic-lvm.scm \

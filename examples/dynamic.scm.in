@@ -1,3 +1,5 @@
+(use-modules (gnu))
+
 ;; Load config-base from current working directory if available
 ;; and fall back to installed version.
 (let ((config-base (string-append (dirname (current-filename))
@@ -6,4 +8,21 @@
       (load config-base)
       (load "@EXAMPLEDIR@/config-base.scm")))
 
-default-os
+(operating-system
+  (inherit default-os)
+  (mapped-devices
+   (if (getenv "LUKS_UUID")
+       (list (mapped-device
+              (source (uuid (getenv "LUKS_UUID")))
+              (targets '("luks_root"))
+              (type luks-device-mapping)))
+       '()))
+  (file-systems
+   (append
+    (list (file-system
+            (device (uuid (getenv "TARGET_UUID")))
+            (mount-point "/")
+            (dependencies mapped-devices)
+            (needed-for-boot? #t)
+            (type (getenv "FS_TYPE"))))
+    %base-file-systems)))
