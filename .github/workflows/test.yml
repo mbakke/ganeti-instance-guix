@@ -31,13 +31,15 @@ jobs:
       - name: Set PATH
         run: |
           echo "$HOME/.guix-profile/bin:$HOME/.guix-profile/sbin" >> $GITHUB_PATH
-      - name: Run tests
+      - name: Bootstrap
+        run: ./bootstrap
+      - name: Build
         run: |
-          ./bootstrap
           ./configure --with-guix=guix \
             --localstatedir=/var --sysconfdir=/etc
           make
-          sudo make -j1 check
+      - name: Test
+        run: sudo make -j$(nproc) check
       - name: Print logs
         if: ${{ failure() }}
         run: cat test-suite.log
