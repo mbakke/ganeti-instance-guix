@@ -26,14 +26,14 @@ export VARIANT_CONFIG=$(pwd)/examples/dynamic.scm
 
 # Create the default configuration.
 INSTANCE_NAME=create-default ./create
-
-# Create with LUKS encryption.
-INSTANCE_NAME=create-luks \
-LUKS_PASSPHRASE=password \
-./create
+INSTANCE_NAME=create-luks LUKS_PASSPHRASE=password ./create
 
 # Advanced layouts.
 export OSP_LAYOUT=advanced
+
+export VARIANT_CONFIG=$(pwd)/examples/dynamic-lvm.scm
+INSTANCE_NAME=create-lvm ./create
+INSTANCE_NAME=create-lvm-luks LUKS_PASSPHRASE=password ./create
 
 export VARIANT_CONFIG=$(pwd)/examples/dynamic-btrfs.scm
 export OSP_FILESYSTEM=btrfs

@@ -8,8 +8,6 @@ os_DATA = common.sh
 
 TESTS = 					\
 	tests/create.sh				\
-	tests/create-lvm.sh 			\
-	tests/create-lvm-luks.sh		\
 	tests/file-system.sh			\
 	tests/partition.sh
 
@@ -25,7 +23,6 @@ dist_example_DATA = \
 	examples/dynamic.scm \
 	examples/dynamic-btrfs.scm \
 	examples/dynamic-lvm.scm \
-	examples/dynamic-lvm-luks.scm \
 	examples/generic.scm
 
 EXTRA_DIST = \
