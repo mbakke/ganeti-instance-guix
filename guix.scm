@@ -52,16 +52,16 @@
                        #:select? (git-predicate %source-dir)))
    (build-system gnu-build-system)
    (native-inputs
-    (list autoconf automake))
+    (list autoconf automake
+          ;; For tests.
+          jq))
    (inputs
     (list cryptsetup
           e2fsprogs
-          jq
           lvm2
           multipath-tools
           parted
-          util-linux
-          qemu-minimal))
+          util-linux))
    (home-page "https://github.com/mbakke/ganeti-instance-guix")
    (synopsis "Create Guix instances on Ganeti")
    (description
