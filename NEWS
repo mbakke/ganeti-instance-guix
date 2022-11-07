@@ -1,3 +1,9 @@
+Version 0.8
+-----------
+* Add support for LUKS encryption.
+* Use UUIDs instead of labels.
+* Added tests.
+
 Version 0.7
 -----------
 * Use 'guix system init' instead of building entire disk images.
