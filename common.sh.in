@@ -70,8 +70,6 @@ format_device() (
     local filesystem="$2"
     local label="$3"
 
-    log "Formatting $device with $filesystem"
-
     case $filesystem in
         btrfs)
             "${MKFS_BTRFS}" -f "$device"
