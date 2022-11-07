@@ -87,19 +87,6 @@ partition_disk(){
     local LUKS_PASSPHRASE="$2"
     local SIZE_PART_2="$3"
 
-    log Starting partitioning on "$TARGET_DEVICE"
-
-    # If this is a reinstallation, the second partition may contain a
-    # mounted filesystem that needs unmounted to proceed.  If part2 is
-    # a luks partition, then find it's /dev/mapper/<part> path, and
-    # ensure that is unmounted.
-    mapfile -t Parts < <("${SFDISK}" --no-reread -d -J "$TARGET_DEVICE" | "${JQ}" -r ".partitiontable.partitions[].node?");
-    if "${CRYPTSETUP}" isLuks "${Parts[1]}" &>/dev/null; then
-        local TARGET_PART="/dev/mapper/$("${LSBLK}" --json "${Parts[1]}" | "${JQ}" -r '.blockdevices[].children[0].name?')"
-    else
-        local TARGET_PART="${Parts[1]}"
-    fi
-
     # It has happened that some VM has kernel panicked due to first
     # sectors not being properly wiped, and writing some random stuff
     # there has solved it:
