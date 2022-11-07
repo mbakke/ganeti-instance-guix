@@ -8,8 +8,6 @@ os_DATA = common.sh
 
 TESTS = 					\
 	tests/create.sh				\
-	tests/create-btrfs.sh 			\
-	tests/create-btrfs-luks.sh 		\
 	tests/create-lvm.sh 			\
 	tests/create-lvm-luks.sh		\
 	tests/file-system.sh			\
@@ -26,7 +24,6 @@ dist_example_DATA = \
 	examples/config-base.scm \
 	examples/dynamic.scm \
 	examples/dynamic-btrfs.scm \
-	examples/dynamic-btrfs-luks.scm \
 	examples/dynamic-lvm.scm \
 	examples/dynamic-lvm-luks.scm \
 	examples/generic.scm

@@ -3,6 +3,8 @@ if [ "$(id -u)" != "0" ]; then
     exit 77
 fi
 
+set -e
+
 # Create a disk image for testing.
 DISK_IMAGE="$(mktemp)"
 CLEANUP+=("rm $DISK_IMAGE")
@@ -29,5 +31,13 @@ INSTANCE_NAME=create-default ./create
 INSTANCE_NAME=create-luks \
 LUKS_PASSPHRASE=password \
 ./create
+
+# Advanced layouts.
+export OSP_LAYOUT=advanced
+
+export VARIANT_CONFIG=$(pwd)/examples/dynamic-btrfs.scm
+export OSP_FILESYSTEM=btrfs
+INSTANCE_NAME=create-btrfs ./create
+INSTANCE_NAME=create-btrfs-luks LUKS_PASSPHRASE=password ./create
 
 # TODO: Boot these images..!

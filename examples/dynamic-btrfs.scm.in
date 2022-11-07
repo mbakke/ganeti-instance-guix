@@ -8,37 +8,50 @@
 
 (operating-system
   (inherit default-os)
+  (mapped-devices
+   (if (getenv "LUKS_UUID")
+       (list (mapped-device
+              (source (uuid (getenv "LUKS_UUID")))
+              (targets '("luks_root"))
+              (type luks-device-mapping)))
+       '()))
   (file-systems
    (let* ((target-uuid (getenv "TARGET_UUID"))
           (%my-filesystems
            (list
             (file-system
               (device (uuid target-uuid))
+              (dependencies mapped-devices)
               (mount-point "/")
               (type "btrfs")
               (options "subvol=/system-root"))
             (file-system
               (device (uuid target-uuid))
+              (dependencies mapped-devices)
               (mount-point "/gnu/store")
               (type "btrfs")
               (options "subvol=system-root/gnu/store"))
             (file-system
               (device (uuid target-uuid))
+              (dependencies mapped-devices)
               (mount-point "/var/log")
               (type "btrfs")
               (options "subvol=system-root/var/log"))
             (file-system
               (device (uuid target-uuid))
+              (dependencies mapped-devices)
               (mount-point "/var/lib")
               (type "btrfs")
               (options "subvol=system-root/var/lib"))
             (file-system
               (device (uuid target-uuid))
+              (dependencies mapped-devices)
               (mount-point "/home")
               (type "btrfs")
               (options "subvol=system-root/home"))
             (file-system
               (device (uuid target-uuid))
+              (dependencies mapped-devices)
               (mount-point "/swap")
               (needed-for-boot? #t)
               (type "btrfs")
