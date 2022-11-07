@@ -183,7 +183,7 @@ create_filesystems(){
         }
         "${PARTED}" --script "$TARGET_DEVICE" \
                set 2 lvm on
-        "${PVCREATE}" "$TARGET_DEV_PART2"
+        "${PVCREATE}" -f "$TARGET_DEV_PART2"
         "${VGCREATE}" "$INSTANCE_NAME"_vg01 "$TARGET_DEV_PART2"
         CLEANUP+=("${VGCHANGE} -an ${INSTANCE_NAME}_vg01")
         ROOT_SIZE='-l 10%VG'
