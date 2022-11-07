@@ -134,14 +134,14 @@ create_filesystems(){
     TARGET_DEV_PART2="${TARGET_PARTITION}"
 
     if [[ "$LAYOUT" == basic ]]; then
-        log "Formatting $device with $filesystem"
+        log "Formatting $TARGET_DEV_PART2 with $FS_TYPE"
         format_device "$TARGET_DEV_PART2" "$FS_TYPE"
     elif [[ "$FS_TYPE" == btrfs ]]; then
         command -v "${BTRFS}" || {
             log "btrfs requested but not installed"
             exit 1
         }
-        log "Creating btrfs subvolume layout on $device"
+        log "Creating btrfs subvolume layout on $TARGET_DEV_PART2"
         format_device "$TARGET_DEV_PART2" "$FS_TYPE"
 
         # For btrfs, create a "system-root" subvolume that holds the
