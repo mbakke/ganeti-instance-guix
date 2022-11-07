@@ -323,7 +323,6 @@ main(){
     # Check if TARGET_DEVICE is a real block device, and losetup it if
     # it isn't (for example when using a file disk):
     if [[ ! -b "$TARGET_DEVICE" ]]; then
-        TARGET_DEVICE_ORIG="$TARGET_DEVICE"
         TARGET_DEVICE=$(losetup_device "$TARGET_DEVICE")
         CLEANUP+=("${LOSETUP} -d $TARGET_DEVICE")
     fi
@@ -341,10 +340,12 @@ main(){
     partition_disk "$TARGET_DEVICE" "${LUKS_PASSPHRASE}" "$PART_SIZE"
     log DONE PARTITIONING.
 
-    # Add partition mappings.
-    if [[ -b "$TARGET_DEVICE_ORIG" ]]; then
+    # Add partition mappings.  Test $DISK_0_PATH because $TARGET_DEVICE
+    # may get reassigned by losetup above (XXX).
+    if [[ -b "$DISK_0_PATH" ]]; then
 	"${KPARTX}" -a "$TARGET_DEVICE"
-	CLEANUP+=("${KPARTX} -d $TARGET_DEVICE"); fi
+	CLEANUP+=("${KPARTX} -d $TARGET_DEVICE")
+    fi
 
     # Each filesystem and layout option combination is handled in the
     # create_filesystems function. This will possibly setup lvm based
