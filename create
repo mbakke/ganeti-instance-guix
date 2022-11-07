@@ -332,13 +332,13 @@ main(){
     TARGET_PARTITION=$(find_partition_path "$TARGET_DEVICE" 2)
     log TARGET_PARTITION set to "$TARGET_PARTITION"
 
-    if [[ -n "$LUKS_PASSPHRASE" ]]; then
+    if [[ -n "$OSP_LUKS_PASSPHRASE" ]]; then
         local luks_name="${TARGET_PARTITION##*/}_mapped"
         local luks_mapped="/dev/mapper/${luks_name}"
         log "LUKS passphrase is set.  Starting LUKS formatting."
-        luks_format "$TARGET_PARTITION" "$LUKS_PASSPHRASE"
+        luks_format "$TARGET_PARTITION" "$OSP_LUKS_PASSPHRASE"
         log Mapping LUKS device "$TARGET_PARTITION" to "$luks_mapped"
-        luks_open "$TARGET_PARTITION" "$luks_name" "$LUKS_PASSPHRASE"
+        luks_open "$TARGET_PARTITION" "$luks_name" "$OSP_LUKS_PASSPHRASE"
         CLEANUP+=("luks_close $luks_name")
 
         # This variable is used by Guix configurations.

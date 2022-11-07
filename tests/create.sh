@@ -26,17 +26,17 @@ export VARIANT_CONFIG=$(pwd)/examples/dynamic.scm
 
 # Create the default configuration.
 INSTANCE_NAME=create-default ./create
-INSTANCE_NAME=create-luks LUKS_PASSPHRASE=password ./create
+INSTANCE_NAME=create-luks OSP_LUKS_PASSPHRASE=password ./create
 
 # Advanced layouts.
 export OSP_LAYOUT=advanced
 
 INSTANCE_NAME=create-lvm ./create
-INSTANCE_NAME=create-lvm-luks LUKS_PASSPHRASE=password ./create
+INSTANCE_NAME=create-lvm-luks OSP_LUKS_PASSPHRASE=password ./create
 
 # btrfs with subvolumes.
 export OSP_FILESYSTEM=btrfs
 INSTANCE_NAME=create-btrfs ./create
-INSTANCE_NAME=create-btrfs-luks LUKS_PASSPHRASE=password ./create
+INSTANCE_NAME=create-btrfs-luks OSP_LUKS_PASSPHRASE=password ./create
 
 # TODO: Boot these images..!
