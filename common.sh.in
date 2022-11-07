@@ -68,7 +68,6 @@ EXAMPLEDIR=@EXAMPLEDIR@
 format_device() (
     local device="$1"
     local filesystem="$2"
-    local label="$3"
 
     case $filesystem in
         btrfs)
