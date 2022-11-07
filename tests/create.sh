@@ -31,12 +31,10 @@ INSTANCE_NAME=create-luks LUKS_PASSPHRASE=password ./create
 # Advanced layouts.
 export OSP_LAYOUT=advanced
 
-export VARIANT_CONFIG=$(pwd)/examples/dynamic-lvm.scm
 INSTANCE_NAME=create-lvm ./create
 INSTANCE_NAME=create-lvm-luks LUKS_PASSPHRASE=password ./create
 
 # btrfs with subvolumes.
-export VARIANT_CONFIG=$(pwd)/examples/dynamic.scm
 export OSP_FILESYSTEM=btrfs
 INSTANCE_NAME=create-btrfs ./create
 INSTANCE_NAME=create-btrfs-luks LUKS_PASSPHRASE=password ./create
