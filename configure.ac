@@ -112,13 +112,6 @@ then
   AC_MSG_ERROR([parted not found, please install parted])
 fi
 
-AC_ARG_VAR(BTRFS, [btrfs path])
-AC_PATH_PROG(BTRFS, [btrfs], btrfs)
-
-AC_PATH_PROG(MKFS_BTRFS, [mkfs.btrfs], mkfs.btrfs)
-AC_PATH_PROG(MKFS_F2FS, [mkfs.f2fs], mkfs.f2fs)
-AC_PATH_PROG(MKFS_XFS, [mkfs.xfs], mkfs.xfs)
-
 AC_ARG_VAR(KPARTX, [kpartx path])
 AC_PATH_PROG(KPARTX, [kpartx])
 if test -z "$KPARTX"
@@ -126,24 +119,25 @@ then
   AC_MSG_ERROR([kpartx not found, please install multipath-tools])
 fi
 
+# Optional dependencies.  They still work if found on PATH at runtime.
+
+AC_ARG_VAR(BTRFS, [btrfs path])
+AC_PATH_PROG(BTRFS, [btrfs], btrfs)
+AC_PATH_PROG(MKFS_BTRFS, [mkfs.btrfs], mkfs.btrfs)
+AC_PATH_PROG(MKFS_F2FS, [mkfs.f2fs], mkfs.f2fs)
+AC_PATH_PROG(MKFS_XFS, [mkfs.xfs], mkfs.xfs)
+
 AC_ARG_VAR(PVCREATE, [pvcreate path])
 AC_PATH_PROG(PVCREATE, [pvcreate], pvcreate)
-
 AC_ARG_VAR(VGCREATE, [vgcreate path])
 AC_PATH_PROG(VGCREATE, [vgcreate], vgcreate)
-
 AC_ARG_VAR(VGCHANGE, [vgchange path])
 AC_PATH_PROG(VGCHANGE, [vgchange], vgchange)
-
 AC_ARG_VAR(LVCREATE, [lvcreate path])
 AC_PATH_PROG(LVCREATE, [lvcreate], lvcreate)
 
 AC_ARG_VAR(CRYPTSETUP, [cryptsetup path])
-AC_PATH_PROG(CRYPTSETUP, [cryptsetup])
-if test -z "$CRYPTSETUP"
-then
-  AC_MSG_ERROR([cryptsetup not found, please install cryptsetup])
-fi
+AC_PATH_PROG(CRYPTSETUP, [cryptsetup], cryptsetup)
 
 AC_ARG_VAR(WIPEFS, [wipefs path])
 AC_PATH_PROG(WIPEFS, [wipefs])
