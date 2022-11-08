@@ -1,20 +1,9 @@
 (use-modules (gnu)
              (ice-9 match)
-             (srfi srfi-60)
              (ice-9 textual-ports)
              (guix build utils)
              (rnrs io ports))
-(use-package-modules certs screen linux cryptsetup)
 (use-service-modules networking ssh sysctl)
-
-(define (cidr->netmask address)
-  "Convert a CIDR specification such as 10.0.0.0/24 to 255.255.255.0."
-  (let ((mask (string->number (match (string-split address #\/)
-                                ((address mask) mask)
-                                (_ "32")))))
-    (inet-ntop AF_INET
-               (arithmetic-shift (inet-pton AF_INET "255.255.255.255")
-                                 (- 32 mask)))))
 
 (define %target-uuid (getenv "TARGET_UUID"))
 
@@ -172,13 +161,10 @@
     (users %base-user-accounts)
 
     ;; Globally-installed packages.
-    (packages (cons* cryptsetup
-                     lvm2
-                     screen
-                     nss-certs
-                     btrfs-progs
-                     xfsprogs
-                     %base-packages))
+    (packages
+     (append (map specification->package
+                  '("nss-certs"))
+             %base-packages))
 
     ;; Add services to the baseline
     (services
