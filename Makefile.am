@@ -7,6 +7,7 @@ dist_os_DATA = ganeti_api_version parameters.list
 os_DATA = common.sh
 
 TESTS = 					\
+	tests/cleanup.sh			\
 	tests/create.sh				\
 	tests/file-system.sh			\
 	tests/partition.sh
