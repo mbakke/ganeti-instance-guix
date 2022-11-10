@@ -145,6 +145,13 @@ then
   AC_MSG_ERROR([cryptsetup not found, please install cryptsetup])
 fi
 
+AC_ARG_VAR(WIPEFS, [wipefs path])
+AC_PATH_PROG(WIPEFS, [wipefs])
+if test -z "$WIPEFS"
+then
+  AC_MSG_ERROR([wipefs not found, please install util-linux])
+fi
+
 AC_CONFIG_FILES([ Makefile ])
 
 AC_OUTPUT

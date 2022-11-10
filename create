@@ -86,6 +86,12 @@ partition_disk(){
     local TARGET_DEVICE="$1"
     local SIZE_PART_2="$2"
 
+    # Ensure the disk we partition is free from all previous "magic"
+    # strings, such as filesystem and partition table signatures. For
+    # example, in case any partition contains an LVM2_member
+    # signature, we need to remove it.
+    "${WIPEFS}" --all --force "${TARGET_DEVICE}"
+
     # It has happened that some VM has kernel panicked due to first
     # sectors not being properly wiped, and writing some random stuff
     # there has solved it:

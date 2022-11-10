@@ -51,6 +51,7 @@ do_subst = $(SED) \
 	-e 's,[@]LVCREATE[@],$(LVCREATE),g' \
 	-e 's,[@]LOSETUP[@],$(LOSETUP),g' \
 	-e 's,[@]BLKID[@],$(BLKID),g' \
+	-e 's,[@]WIPEFS[@],$(WIPEFS),g' \
 	-e 's,[@]CRYPTSETUP[@],$(CRYPTSETUP),g'
 
 common.sh: common.sh.in Makefile
