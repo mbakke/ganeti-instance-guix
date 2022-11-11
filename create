@@ -229,18 +229,18 @@ prep_init_mount_point(){
     if [[ "$LAYOUT" == "basic" ]]; then
         # Basic layouts can just be mounted directly.
         "$MOUNT" "$TARGET_DEV_PART2" "$TARGET_ROOT"
-        CLEANUP+=("$UMOUNT -R $TARGET_ROOT")
+        CLEANUP+=("$UMOUNT $TARGET_ROOT")
     else
         if [[ "$FS_TYPE" == "btrfs" ]]; then
             # The advanced btrfs layout uses a system-root subvolume.
             "$MOUNT" -o "subvol=system-root" "$TARGET_DEV_PART2" "$TARGET_ROOT"
-            CLEANUP+=("$UMOUNT -R $TARGET_ROOT")
+            CLEANUP+=("$UMOUNT $TARGET_ROOT")
         else
             # The advanced layout for non-btrfs filesystems is setup with LVM
             log Mounting LVM logical volumes from "${INSTANCE_NAME}"_vg01 \
                 of "$TARGET_DEV_PART2"
             "$MOUNT" "/dev/${INSTANCE_NAME}_vg01/lv_root" "$TARGET_ROOT"
-            CLEANUP+=("$UMOUNT -R $TARGET_ROOT")
+            CLEANUP+=("$UMOUNT $TARGET_ROOT")
             for lv in lv_home lv_gnu_store lv_var_log lv_swap lv_var_lib; do
                 lv="${lv#lv_}"
                 mkdir -p "$TARGET_ROOT"/"${lv//_/\/}" >&2
@@ -249,8 +249,7 @@ prep_init_mount_point(){
                         "$TARGET_ROOT"/"${lv//_/\/}" >&2
                     "$MOUNT" "/dev/${INSTANCE_NAME}_vg01/lv_${lv}" \
                              "$TARGET_ROOT"/"${lv//_/\/}"
-		    #umount -R on root lv above should be enough
-                    #CLEANUP+=("$UMOUNT $TARGET_ROOT/${lv//_/\/}")
+                    CLEANUP+=("$UMOUNT $TARGET_ROOT/${lv//_/\/}")
                 fi
             done
         fi
