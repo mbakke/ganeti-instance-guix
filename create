@@ -81,26 +81,26 @@ guix_setup(){
 
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
 partition_disk(){
-    local TARGET_DEVICE="$1"
-    local SIZE_PART_2="$2"
+    local device="$1"
+    local size="$2"
 
     # Ensure the disk we partition is free from all previous "magic"
     # strings, such as filesystem and partition table signatures. For
     # example, in case any partition contains an LVM2_member
     # signature, we need to remove it.
-    "${WIPEFS}" --all --force "${TARGET_DEVICE}"
+    "${WIPEFS}" --all --force "${device}"
 
     # It has happened that some VM has kernel panicked due to first
     # sectors not being properly wiped, and writing some random stuff
     # there has solved it:
-    head -c 3145728 /dev/urandom > "$TARGET_DEVICE"; sync
+    head -c 3145728 /dev/urandom > "$device"; sync
 
     # Create bios_grub partition and offset so it's easy to use either
     # of MBR or GPT or to switch between them.
     # https://www.gnu.org/software/grub/manual/grub/html_node/BIOS-installation.html#BIOS-installation
     # If part2 should have a size limit, then use that for the second partition.
-    log Creating 2 partitions on "$TARGET_DEVICE"
-    partition_device "$TARGET_DEVICE" "$SIZE_PART_2"
+    log Creating 2 partitions on "$device"
+    partition_device "$device" "$size"
 }
 
 # $1 like: /dev/mapper/vg--drbd-e7deba31--7f30--4475--9ff3--2565f232f780.disk0
