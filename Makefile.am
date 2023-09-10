@@ -22,7 +22,8 @@ exampledir = $(docdir)/examples
 dist_example_DATA = \
 	examples/config-base.scm \
 	examples/dynamic.scm \
-	examples/generic.scm
+	examples/generic.scm \
+	examples/hurd.scm
 
 EXTRA_DIST = \
 	$(TESTS)				\
@@ -34,6 +35,7 @@ do_subst = $(SED) \
 	-e 's,[@]GUIX[@],$(GUIX),g' \
 	-e 's,[@]GCROOTSDIR[@],$(GCROOTSDIR),g' \
 	-e 's,[@]VARIANTSDIR[@],$(VARIANTSDIR),g' \
+	-e 's,[@]QEMU_IMG[@],$(QEMU_IMG),g' \
 	-e 's,[@]MOUNT[@],$(MOUNT),g' \
 	-e 's,[@]UMOUNT[@],$(UMOUNT),g' \
 	-e 's,[@]FALLOCATE[@],$(FALLOCATE),g' \

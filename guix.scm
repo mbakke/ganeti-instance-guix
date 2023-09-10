@@ -45,27 +45,28 @@
 
 (define ganeti-instance-guix
   (package
-   (name "ganeti-instance-guix")
-   (version version)
-   (source (local-file %source-dir
-                       #:recursive? #t
-                       #:select? (git-predicate %source-dir)))
-   (build-system gnu-build-system)
-   (native-inputs
-    (list autoconf automake
-          ;; For tests.
-          jq))
-   (inputs
-    (list cryptsetup
-          e2fsprogs
-          lvm2
-          multipath-tools
-          parted
-          util-linux))
-   (home-page "https://github.com/mbakke/ganeti-instance-guix")
-   (synopsis "Create Guix instances on Ganeti")
-   (description
-    "@code{instance-guix} is a Ganeti OS definition that creates Guix instances.")
-   (license gpl3+)))
+    (name "ganeti-instance-guix")
+    (version version)
+    (source (local-file %source-dir
+                        #:recursive? #t
+                        #:select? (git-predicate %source-dir)))
+    (build-system gnu-build-system)
+    (native-inputs
+     (list autoconf automake
+           ;; For tests.
+           jq))
+    (inputs
+     (list cryptsetup
+           e2fsprogs
+           lvm2
+           multipath-tools
+           parted
+           qemu-minimal                 ;for qemu-img
+           util-linux))
+    (home-page "https://github.com/mbakke/ganeti-instance-guix")
+    (synopsis "Create Guix instances on Ganeti")
+    (description
+     "@code{instance-guix} is a Ganeti OS definition that creates Guix instances.")
+    (license gpl3+)))
 
 ganeti-instance-guix

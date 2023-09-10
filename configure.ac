@@ -121,6 +121,9 @@ fi
 
 # Optional dependencies.  They still work if found on PATH at runtime.
 
+AC_ARG_VAR(QEMU_IMG, [qemu-img path])
+AC_PATH_PROG(QEMU_IMG, [qemu-img], qemu-img)
+
 AC_ARG_VAR(BTRFS, [btrfs path])
 AC_PATH_PROG(BTRFS, [btrfs], btrfs)
 AC_PATH_PROG(MKFS_BTRFS, [mkfs.btrfs], mkfs.btrfs)

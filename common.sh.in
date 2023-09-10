@@ -37,6 +37,7 @@ trap cleanup EXIT
 GUIX=@GUIX@
 
 # external programs
+QEMU_IMG=@QEMU_IMG@
 CRYPTSETUP=@CRYPTSETUP@
 MOUNT=@MOUNT@
 UMOUNT=@UMOUNT@

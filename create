@@ -283,9 +283,11 @@ main(){
     log Running with options set to:
     log INSTANCE_NAME: "${INSTANCE_NAME}"
     log TARGET_DEVICE: "${TARGET_DEVICE}"
+    log DISK_0_SIZE: "${DISK_0_SIZE}"
     log OSP_FILESYSTEM: "${OSP_FILESYSTEM:-ext4}"
     log OSP_LAYOUT: "${OSP_LAYOUT:-basic}"
     log VARIANT_CONFIG: "${VARIANT_CONFIG}"
+    log OSP_HURD: "${OSP_HURD}"
 
     # Make Guix use the specified CACHE_DIR to store Guile and Git caches.
     if [[ -n "$CACHE_DIR" ]] && [[ ! -d "$CACHE_DIR" ]]; then
@@ -313,6 +315,21 @@ main(){
 
     # Say 'cheeese'.
     $GUIX_COMMAND --version
+
+    if [[ "${OSP_HURD}" = "true" ]]; then
+        log "Creating GNU/Hurd image..."
+        # Reserve 50 MiB to ensure the image does not exceed Ganeti size.
+        IMAGE_SIZE=$((DISK_0_SIZE - 50))
+        DISK_IMAGE=$($GUIX_COMMAND image -t hurd-qcow2 --image-size=${IMAGE_SIZE}M "${VARIANT_CONFIG}")
+        if [[ -b "${TARGET_DEVICE}" ]]; then
+            $QEMU_IMG dd bs=4M -O raw if="$DISK_IMAGE" of="$TARGET_DEVICE"
+        else
+            $QEMU_IMG convert -O raw "$DISK_IMAGE" "$TARGET_DEVICE"
+        fi
+
+        # Nothing left to do.
+        return
+    fi
 
     # A basic 2 partitions setup.
     partition_disk "$TARGET_DEVICE" "$PART_SIZE"
